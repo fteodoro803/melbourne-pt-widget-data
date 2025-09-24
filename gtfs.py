@@ -1,12 +1,38 @@
 import os
 import zipfile
+from datetime import datetime
+
 import requests
 import io
+
+last_updated_file = "last_updated.txt"
+date_format = "%d %B %Y"  # matches "19 September 2025"
+
+# -----------------------------------
+# Updates last_updated.txt
+# -----------------------------------
+def updateLastUpdated(date_of_data: str) -> None:
+    with open(last_updated_file, "w") as f:
+        f.write(date_of_data.__str__())
+
+    print(f"Updated {last_updated_file} with date: {date_of_data}")
+
+def getLastUpdatedDate() -> datetime | None:
+
+    try:
+        with open(last_updated_file, "r") as f:
+            data = f.read()
+            date = datetime.strptime(data, date_format)
+            print(f"Date of old data: {date}")
+            return date
+    except FileNotFoundError:
+        print(f"No {last_updated_file} found.")
+        return None
 
 # -----------------------------------
 # Download the GTFS Schedule ZIP file
 # -----------------------------------
-def downloadGtfs(download_link, file_name, enabled):
+def downloadGtfs(download_link: str, file_name: str, enabled: bool) -> None:
     """
     Download a GTFS ZIP file from a URL.
 
@@ -33,7 +59,7 @@ def downloadGtfs(download_link, file_name, enabled):
 # -----------------------------------
 # Extract selected files from GTFS ZIP
 # -----------------------------------
-def cleanGtfs(gtfs_zip, output_folder, keep_folders, keep_files, enabled):
+def cleanGtfs(gtfs_zip: str, output_folder: str, keep_folders: [str], keep_files: [str], enabled: bool) -> None:
     """
     Extract selected files from inner ZIPs inside a GTFS outer ZIP.
 
@@ -42,6 +68,7 @@ def cleanGtfs(gtfs_zip, output_folder, keep_folders, keep_files, enabled):
         output_folder (str): Base folder where extracted files will go.
         keep_folders (list[str]): Only process these transport numbers (e.g. ['2','3']).
         keep_files (list[str]): Only extract these filenames from each inner ZIP (e.g. ['routes.txt','stops.txt']).
+        enabled (bool):
     """
 
     # Skip if disabled
@@ -81,3 +108,10 @@ def cleanGtfs(gtfs_zip, output_folder, keep_folders, keep_files, enabled):
                                 f.write(data)
 
                             print(f"Saved {file} from {transport} to {out_path}")
+
+def delete_file(file_name: str) -> None:
+    if os.path.exists(file_name):
+        os.remove(file_name)
+        print(f"Deleted {file_name}")
+    else:
+        print(f"{file_name} could not be deleted, it doesn't exist")
