@@ -4,6 +4,7 @@ from datetime import datetime
 
 import requests
 import io
+import shutil
 
 last_updated_file = "last_updated.txt"
 date_format = "%d %B %Y"  # matches "19 September 2025"
@@ -109,9 +110,26 @@ def cleanGtfs(gtfs_zip: str, output_folder: str, keep_folders: [str], keep_files
 
                             print(f"Saved {file} from {transport} to {out_path}")
 
-def delete_file(file_name: str) -> None:
-    if os.path.exists(file_name):
-        os.remove(file_name)
-        print(f"Deleted {file_name}")
+def delete_file(path: str) -> None:
+    """
+    Delete a file or directory (recursively if directory).
+    """
+    if os.path.isdir(path):
+        shutil.rmtree(path)
+        print(f"Deleted directory {path}")
+    elif os.path.isfile(path):
+        os.remove(path)
+        print(f"Deleted file {path}")
     else:
-        print(f"{file_name} could not be deleted, it doesn't exist")
+        print(f"{path} does not exist")
+
+def reset(enabled: bool) -> None:
+    if not enabled:
+        return
+
+    print(f"Resetting Files")
+    print(f"Deleting extracted folder, last_updated.txt, gtfs.zip...")
+    delete_file("extracted")
+    delete_file("last_updated.txt")
+    delete_file("gtfs.zip")
+    print("Reset finished")

@@ -3,10 +3,11 @@ from datetime import datetime
 from bs4 import BeautifulSoup
 import re
 import requests
-from gtfs import downloadGtfs, cleanGtfs, updateLastUpdated, getLastUpdatedDate, date_format, delete_file
+from gtfs import downloadGtfs, cleanGtfs, updateLastUpdated, getLastUpdatedDate, date_format, delete_file, reset
 
 # FLAG TO ENABLE/DISABLE DOWNLOADS
 ENABLE_DOWNLOAD = True
+RESET_FILES = False
 
 # 1. Get HTML of GTFS Schedule
 url = "https://opendata.transport.vic.gov.au/dataset/gtfs-schedule"
@@ -69,3 +70,6 @@ else:
     delete_file(gtfsFile)
 
 print("Done")
+
+# Test. Reset files
+reset(RESET_FILES)
