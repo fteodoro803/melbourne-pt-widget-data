@@ -1,10 +1,14 @@
 import os
+import re
 import zipfile
 from datetime import datetime
 
 import requests
 import io
 import shutil
+
+import pandas as pd
+import sqlite3
 
 last_updated_file = "last_updated.txt"
 date_format = "%d %B %Y"  # matches "19 September 2025"
@@ -116,20 +120,54 @@ def delete_file(path: str) -> None:
     """
     if os.path.isdir(path):
         shutil.rmtree(path)
-        print(f"Deleted directory {path}")
+        print(f"Deleted directory '{path}'")
     elif os.path.isfile(path):
         os.remove(path)
-        print(f"Deleted file {path}")
+        print(f"Deleted file '{path}'")
     else:
-        print(f"{path} does not exist")
+        print(f"'{path}' does not exist")
 
 def reset(enabled: bool) -> None:
     if not enabled:
         return
 
     print(f"Resetting Files")
-    print(f"Deleting extracted folder, last_updated.txt, gtfs.zip...")
+    print(f"Deleting extracted folder, last_updated.txt, gtfs.zip, gtfs.sqlite...")
     delete_file("extracted")
     delete_file("last_updated.txt")
     delete_file("gtfs.zip")
+    delete_file("gtfs.sqlite")
     print("Reset finished")
+
+def add_to_database(file_path: str, transports: dict[str, str]) -> None:
+    # 1. Load file
+    df = pd.read_csv(file_path)
+
+    # 2. Figure out file type
+    fileType = ""
+    if "trips.txt" in file_path:
+        fileType = "trips"
+    elif "routes.txt" in file_path:
+        fileType = "routes"
+    elif "shapes.txt" in file_path:
+        fileType = "shapes"
+
+    # 3. Find transport type
+    transport_num = re.search(r'\d+', file_path)
+    if len(fileType) == 0 or transport_num is None:
+        return
+
+    if transport_num:
+        transport_num = transport_num.group()       # converts to a str
+        transport_str = transports[transport_num]
+    else:
+        return
+
+    transport_str = transport_str.replace(' ', '_').lower()
+
+    # 4. Create/Open database
+    database = sqlite3.connect("gtfs.sqlite")
+
+    # 5. Save file dataframe to database
+    df.to_sql(f"{transport_str}_{fileType}", database, if_exists="replace", index=False)
+    print(f"Added {transport_str}_{fileType} to database")

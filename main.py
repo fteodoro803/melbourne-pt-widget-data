@@ -1,9 +1,11 @@
+import os
 from datetime import datetime
 
 from bs4 import BeautifulSoup
 import re
 import requests
-from gtfs import downloadGtfs, cleanGtfs, updateLastUpdated, getLastUpdatedDate, date_format, delete_file, reset
+from gtfs import downloadGtfs, cleanGtfs, updateLastUpdated, getLastUpdatedDate, date_format, delete_file, reset, \
+    add_to_database
 
 # FLAG TO ENABLE/DISABLE DOWNLOADS
 ENABLE_DOWNLOAD = True
@@ -60,14 +62,24 @@ else:
     downloadGtfs(downloadLink, gtfsFile, ENABLE_DOWNLOAD)
 
     # 4. Get the necessary files
-    extractTo = "extracted"
+    extractedDirectory = "extracted"
     keepFolders = list(transportsDict.keys())
     keepFiles = ["routes.txt", "trips.txt", "shapes.txt"]
 
-    cleanGtfs(gtfsFile, extractTo, keepFolders, keepFiles, ENABLE_DOWNLOAD)
+    cleanGtfs(gtfsFile, extractedDirectory, keepFolders, keepFiles, ENABLE_DOWNLOAD)
 
-    # 5. Delete the downloaded gtfs.zip file to save space
+    # 5. Convert to sqlite database
+    delete_file("gtfs.sqlite")      # delete table, if it exists
+    for root, dirs, files in os.walk("extracted"):
+        for filename in files:
+            full_path = os.path.join(root, filename)
+
+            if ".txt" in full_path:
+                add_to_database(full_path, transportsDict)
+
+    # 6. Delete the downloaded gtfs.zip and extracted files to save space
     delete_file(gtfsFile)
+    delete_file("extracted")
 
 print("Done")
 
