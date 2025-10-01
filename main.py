@@ -7,6 +7,9 @@ import requests
 from gtfs import downloadGtfs, cleanGtfs, updateLastUpdated, getLastUpdatedDate, date_format, delete_file, reset, \
     add_to_database
 
+import sqlite3
+import pandas as pd
+
 # FLAG TO ENABLE/DISABLE DOWNLOADS
 ENABLE_DOWNLOAD = True
 RESET_FILES = False
