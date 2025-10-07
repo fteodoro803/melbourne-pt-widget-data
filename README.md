@@ -1,5 +1,5 @@
 # melbourne-pt-widget-data
-Scripts used to handle data for Melbourne PT Widget
+Scripts used to handle gtfs data for Melbourne PT Widget
 
 FastApi
 - Run:
