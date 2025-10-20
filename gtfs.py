@@ -9,7 +9,8 @@ import io
 import pandas as pd
 import sqlite3
 
-last_updated_file = "last_updated.txt"
+from files import LAST_UPDATED_FILE
+
 date_format = "%d %B %Y"  # matches "19 September 2025"
 
 # -----------------------------------
@@ -17,23 +18,23 @@ date_format = "%d %B %Y"  # matches "19 September 2025"
 # -----------------------------------
 def updateLastUpdated(date_of_data: str) -> None:
     try:
-        with open(last_updated_file, "w") as f:
+        with open(LAST_UPDATED_FILE, "w") as f:
             f.write(date_of_data.__str__())
 
-        print(f"Updated {last_updated_file} with date: {date_of_data}")
+        print(f"Updated {LAST_UPDATED_FILE} with date: {date_of_data}")
     except FileNotFoundError:
-        print(f"No {last_updated_file} found.")
+        print(f"No {LAST_UPDATED_FILE} found.")
         return None
 
 def getLastUpdatedDate() -> datetime | None:
     try:
-        with open(last_updated_file, "r") as f:
+        with open(LAST_UPDATED_FILE, "r") as f:
             data = f.read()
             date = datetime.strptime(data, date_format)
             print(f"Date of old data: {date}")
             return date
     except FileNotFoundError:
-        print(f"No {last_updated_file} found.")
+        print(f"No {LAST_UPDATED_FILE} found.")
         return None
 
 # -----------------------------------
