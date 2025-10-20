@@ -42,8 +42,9 @@ else:
     if len(links) > 0:
         downloadLink = links[0]
 
-    # Folder numbers for metro Tram, Train, Bus
-    transports = "Metropolitan"
+    # Transport Types
+    # transports = "Metropolitan"       # Folder numbers for metro Tram, Train, Bus
+    transports = "Tram"
     numberFilter = soup.find_all("p")
     transportsDict = {}
 
