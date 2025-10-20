@@ -8,81 +8,173 @@ from gtfs import downloadGtfs, cleanGtfs, updateLastUpdated, getLastUpdatedDate,
 from utils import reset, delete_file
 from files import GTFS_FILE, DATABASE_FILE, EXTRACTED_DIRECTORY
 
-# FLAG TO ENABLE/DISABLE DOWNLOADS
-ENABLE_DOWNLOAD = True
-RESET_FILES = False
+# Constants
+GTFS_URL = "https://opendata.transport.vic.gov.au/dataset/gtfs-schedule"
+TRANSPORT_FILTER = "Tram"  # Can be "Metropolitan", "Tram", etc.
+KEEP_FILES = ["routes.txt", "trips.txt", "shapes.txt"]
 
 
-# 1. Get HTML of GTFS Schedule
-url = "https://opendata.transport.vic.gov.au/dataset/gtfs-schedule"
-response = requests.get(url)
+def fetch_gtfs_metadata():
+    """
+    Fetch the GTFS dataset page and extract metadata.
 
-# 2. Parse response to get download link and specific folder numbers
-soup = BeautifulSoup(response.text, features="html.parser")
+    Returns:
+        tuple: (last_updated_date, download_link, soup object)
+    """
+    response = requests.get(GTFS_URL)
+    soup = BeautifulSoup(response.text, features="html.parser")
 
-previousDate = getLastUpdatedDate()
-dateFilter = soup.find("th", string="Last Updated Date")
-dateString = dateFilter.find_next("td").get_text(strip=True)
-newDate = datetime.strptime(dateString, date_format)
-print(f"Date of new data: {newDate}")
+    # Extract last updated date
+    dateFilter = soup.find("th", string="Last Updated Date")
+    dateString = dateFilter.find_next("td").get_text(strip=True)
+    lastUpdated = datetime.strptime(dateString, date_format)
 
-# Stop if newDate is older than or equal to previousDate
-if previousDate and (newDate <= previousDate):
-    # do nothing
-    print("New data is not newer than previous data, skipping")
-else:
-    print("Updating data")
-    updateLastUpdated(dateString)
+    # Extract download link
+    downloadFilter = soup.find_all("a", attrs={"href": re.compile("gtfs.zip")})
+    links = [a.get('href') for a in downloadFilter]
+    downloadLink = links[0] if links else ""
 
-    # Download link
-    downloadFilter = soup.find_all("a", attrs={"href": re.compile("gtfs.zip")})       # Gets the tags where the gtfs.zip is
-    links = [a.get('href') for a in downloadFilter]       # Extract the href links
-    downloadLink = ""
-    if len(links) > 0:
-        downloadLink = links[0]
+    return lastUpdated, downloadLink, soup
 
-    # Transport Types
-    # transports = "Metropolitan"       # Folder numbers for metro Tram, Train, Bus
-    transports = "Tram"
-    numberFilter = soup.find_all("p")
+
+def parse_transport_types(soup, transport_filter):
+    """
+    Parse transport types and their numbers from the HTML.
+
+    Args:
+        soup: BeautifulSoup object
+        transport_filter: String to filter transport types (e.g., "Tram")
+
+    Returns:
+        dict: {transport_number: transport_type}
+    """
     transportsDict = {}
+    pattern = r"(\d+)\s*\(([^)]+)\)"
+    numberFilter = soup.find_all("p")
 
-    pattern = r"(\d+)\s*\(([^)]+)\)"        # assumes the transport type is of the form: "number (transport type)", ex "3 (Metropolitan Tram)"
     for item in numberFilter:
-        if item.getText().__contains__(transports):
+        if transport_filter in item.getText():
             transport = item.getText()
             match = re.findall(pattern, transport)
 
-            if len(match) > 0:
+            if match:
                 number = match[0][0]
                 transportType = match[0][1]
                 transportsDict[number] = transportType
 
     print(f"Transports dictionary: {transportsDict}")
+    return transportsDict
 
-    # 3. Download the file
-    downloadGtfs(downloadLink, GTFS_FILE, ENABLE_DOWNLOAD)
 
-    # 4. Get the necessary files
-    keepFolders = list(transportsDict.keys())
-    keepFiles = ["routes.txt", "trips.txt", "shapes.txt"]
+def check_if_update_needed(new_date):
+    """
+    Check if data needs updating based on dates.
 
-    cleanGtfs(GTFS_FILE, EXTRACTED_DIRECTORY, keepFolders, keepFiles, ENABLE_DOWNLOAD)
+    Args:
+        new_date: datetime object of new data
 
-    # 5. Convert to sqlite database
-    delete_file(DATABASE_FILE)      # delete table, if it exists
+    Returns:
+        bool: True if update needed, False otherwise
+    """
+    previousDate = getLastUpdatedDate()
+    print(f"Date of new data: {new_date}")
+
+    if previousDate and (new_date <= previousDate):
+        print("New data is not newer than previous data, skipping...")
+        return False
+
+    print("Updating data")
+    return True
+
+
+def download_and_extract_gtfs(download_link, transports_dict):
+    """
+    Download GTFS file and extract relevant transport data.
+
+    Args:
+        download_link: URL to download GTFS zip
+        transports_dict: Dictionary of transport numbers and types
+    """
+    # Download
+    downloadGtfs(download_link, GTFS_FILE, enabled=True)
+
+    # Extract
+    keepFolders = list(transports_dict.keys())
+    cleanGtfs(GTFS_FILE, EXTRACTED_DIRECTORY, keepFolders, KEEP_FILES, enabled=True)
+
+
+def build_database(transports_dict):
+    """
+    Build SQLite database from extracted GTFS files.
+
+    Args:
+        transports_dict: Dictionary of transport numbers and types
+    """
+    # Delete old database
+    delete_file(DATABASE_FILE)
+
+    # Process all extracted txt files
     for root, dirs, files in os.walk(EXTRACTED_DIRECTORY):
         for filename in files:
             data_file_path = os.path.join(root, filename)
 
-            if ".txt" in data_file_path:
-                add_to_database(DATABASE_FILE, data_file_path, transportsDict)
+            if data_file_path.endswith(".txt"):
+                add_to_database(DATABASE_FILE, data_file_path, transports_dict)
 
-    # 6. Delete the downloaded gtfs.zip and extracted files to save space
+
+def cleanup_temp_files():
+    """Remove temporary files to save space."""
     delete_file(GTFS_FILE)
     delete_file(EXTRACTED_DIRECTORY)
 
-print("Done")
 
-# Test. Reset files
-reset(RESET_FILES)
+def update_gtfs_data():
+    """
+    Main function to update GTFS data.
+    Downloads new data if available and builds database.
+
+    Returns:
+        bool: True if update was performed, False if skipped
+    """
+    # Fetch metadata
+    newDate, downloadLink, soup = fetch_gtfs_metadata()
+
+    # Check if update needed
+    if not check_if_update_needed(newDate):
+        return False
+
+    # Update last updated date
+    updateLastUpdated(newDate.strftime(date_format))
+
+    # Parse transport types
+    transportsDict = parse_transport_types(soup, TRANSPORT_FILTER)
+
+    # Download and process
+    download_and_extract_gtfs(downloadLink, transportsDict)
+
+    # Build database
+    build_database(transportsDict)
+
+    # Cleanup
+    cleanup_temp_files()
+
+    return True
+
+
+def main():
+    """Entry point for local testing."""
+    RESET_FILES = False
+
+    try:
+        update_gtfs_data()
+        print("Done")
+    except Exception as e:
+        print(f"Error: {e}")
+        raise
+    finally:
+        # Test reset if needed
+        reset(RESET_FILES)
+
+
+if __name__ == "__main__":
+    main()
