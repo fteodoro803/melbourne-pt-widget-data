@@ -5,7 +5,6 @@ from datetime import datetime
 
 import requests
 import io
-import shutil
 
 import pandas as pd
 import sqlite3
@@ -17,13 +16,16 @@ date_format = "%d %B %Y"  # matches "19 September 2025"
 # Updates last_updated.txt
 # -----------------------------------
 def updateLastUpdated(date_of_data: str) -> None:
-    with open(last_updated_file, "w") as f:
-        f.write(date_of_data.__str__())
+    try:
+        with open(last_updated_file, "w") as f:
+            f.write(date_of_data.__str__())
 
-    print(f"Updated {last_updated_file} with date: {date_of_data}")
+        print(f"Updated {last_updated_file} with date: {date_of_data}")
+    except FileNotFoundError:
+        print(f"No {last_updated_file} found.")
+        return None
 
 def getLastUpdatedDate() -> datetime | None:
-
     try:
         with open(last_updated_file, "r") as f:
             data = f.read()
@@ -114,32 +116,7 @@ def cleanGtfs(gtfs_zip: str, output_folder: str, keep_folders: [str], keep_files
 
                             print(f"Saved {file} from {transport} to {out_path}")
 
-def delete_file(path: str) -> None:
-    """
-    Delete a file or directory (recursively if directory).
-    """
-    if os.path.isdir(path):
-        shutil.rmtree(path)
-        print(f"Deleted directory '{path}'")
-    elif os.path.isfile(path):
-        os.remove(path)
-        print(f"Deleted file '{path}'")
-    else:
-        print(f"'{path}' does not exist")
-
-def reset(enabled: bool) -> None:
-    if not enabled:
-        return
-
-    print(f"Resetting Files")
-    print(f"Deleting extracted folder, last_updated.txt, gtfs.zip, gtfs.sqlite...")
-    delete_file("extracted")
-    delete_file("last_updated.txt")
-    delete_file("gtfs.zip")
-    delete_file("gtfs.sqlite")
-    print("Reset finished")
-
-def add_to_database(file_path: str, transports: dict[str, str]) -> None:
+def add_to_database(database: str, file_path: str, transports: dict[str, str]) -> None:
     # 1. Load file
     df = pd.read_csv(file_path)
 
@@ -166,7 +143,7 @@ def add_to_database(file_path: str, transports: dict[str, str]) -> None:
     transport_str = transport_str.replace(' ', '_').lower()
 
     # 4. Create/Open database
-    database = sqlite3.connect("gtfs.sqlite")
+    database = sqlite3.connect(database)
 
     # 5. Save file dataframe to database
     df.to_sql(f"{transport_str}_{fileType}", database, if_exists="replace", index=False)
