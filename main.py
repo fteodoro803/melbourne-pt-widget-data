@@ -6,10 +6,12 @@ import re
 import requests
 from gtfs import downloadGtfs, cleanGtfs, updateLastUpdated, getLastUpdatedDate, date_format, add_to_database
 from utils import reset, delete_file
+from files import GTFS_FILE, DATABASE_FILE, EXTRACTED_DIRECTORY
 
 # FLAG TO ENABLE/DISABLE DOWNLOADS
 ENABLE_DOWNLOAD = True
 RESET_FILES = False
+
 
 # 1. Get HTML of GTFS Schedule
 url = "https://opendata.transport.vic.gov.au/dataset/gtfs-schedule"
@@ -59,29 +61,26 @@ else:
     print(f"Transports dictionary: {transportsDict}")
 
     # 3. Download the file
-    gtfsFile = "gtfs.zip"
-    downloadGtfs(downloadLink, gtfsFile, ENABLE_DOWNLOAD)
+    downloadGtfs(downloadLink, GTFS_FILE, ENABLE_DOWNLOAD)
 
     # 4. Get the necessary files
-    extractedDirectory = "extracted"
     keepFolders = list(transportsDict.keys())
     keepFiles = ["routes.txt", "trips.txt", "shapes.txt"]
 
-    cleanGtfs(gtfsFile, extractedDirectory, keepFolders, keepFiles, ENABLE_DOWNLOAD)
+    cleanGtfs(GTFS_FILE, EXTRACTED_DIRECTORY, keepFolders, keepFiles, ENABLE_DOWNLOAD)
 
     # 5. Convert to sqlite database
-    database = "gtfs.sqlite"
-    delete_file(database)      # delete table, if it exists
-    for root, dirs, files in os.walk("extracted"):
+    delete_file(DATABASE_FILE)      # delete table, if it exists
+    for root, dirs, files in os.walk(EXTRACTED_DIRECTORY):
         for filename in files:
             data_file_path = os.path.join(root, filename)
 
             if ".txt" in data_file_path:
-                add_to_database(database, data_file_path, transportsDict)
+                add_to_database(DATABASE_FILE, data_file_path, transportsDict)
 
     # 6. Delete the downloaded gtfs.zip and extracted files to save space
-    delete_file(gtfsFile)
-    delete_file(extractedDirectory)
+    delete_file(GTFS_FILE)
+    delete_file(EXTRACTED_DIRECTORY)
 
 print("Done")
 
