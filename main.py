@@ -1,7 +1,7 @@
 import os
 
 from data_processing import update_gtfs_data
-from files import DATABASE_FILE
+from files import DATABASE_FILE, LAST_UPDATED_FILE
 from google.cloud import storage
 
 BUCKET_NAME = "ptv-widget-gtfs-schedule"
@@ -9,10 +9,11 @@ BUCKET_NAME = "ptv-widget-gtfs-schedule"
 def cloud_update_gtfs(request):
     """Cloud Function entry point."""
     try:
-        was_updated = update_gtfs_data()
+        was_updated, date_of_data = update_gtfs_data()
 
         if was_updated:
             # Use the helper function for uploads
+            upload_to_cloud_storage(LAST_UPDATED_FILE, BUCKET_NAME, 'last_updated.txt')
             upload_to_cloud_storage(DATABASE_FILE, BUCKET_NAME, 'gtfs.sqlite')
 
             return 'Data updated successfully!', 200

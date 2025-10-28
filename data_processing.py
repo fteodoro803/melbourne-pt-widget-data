@@ -4,6 +4,8 @@ from datetime import datetime
 from bs4 import BeautifulSoup
 import re
 import requests
+from pyasn1.type.univ import Boolean
+
 from gtfs import downloadGtfs, cleanGtfs, updateLastUpdated, getLastUpdatedDate, date_format, add_to_database
 from utils import reset, delete_file
 from files import GTFS_FILE, DATABASE_FILE, EXTRACTED_DIRECTORY
@@ -137,14 +139,14 @@ def update_gtfs_data():
         bool: True if update was performed, False if skipped
     """
     # Fetch metadata
-    newDate, downloadLink, soup = fetch_gtfs_metadata()
+    dateOfData, downloadLink, soup = fetch_gtfs_metadata()
 
     # Check if update needed
-    if not check_if_update_needed(newDate):
-        return False
+    if not check_if_update_needed(dateOfData):
+        return False, dateOfData
 
     # Update last updated date
-    updateLastUpdated(newDate.strftime(date_format))
+    updateLastUpdated(dateOfData.strftime(date_format))
 
     # Parse transport types
     transportsDict = parse_transport_types(soup, TRANSPORT_FILTER)
@@ -158,7 +160,7 @@ def update_gtfs_data():
     # Cleanup
     cleanup_temp_files()
 
-    return True
+    return True, dateOfData
 
 
 def main():
