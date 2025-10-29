@@ -7,10 +7,10 @@ TEMP_DIR = "/tmp" if IS_CLOUD else "."
 gtfs = "gtfs.zip"
 extracted = "extracted"
 database = "gtfs.sqlite"
-last_updated = "last_updated.txt"
+version = "version.txt"
 
 # FILES AND DIRECTORIES
 GTFS_FILE: str = os.path.join(TEMP_DIR, gtfs)
 EXTRACTED_DIRECTORY: str = os.path.join(TEMP_DIR, extracted)
 DATABASE_FILE: str = os.path.join(TEMP_DIR, database)
-LAST_UPDATED_FILE: str = os.path.join(TEMP_DIR, last_updated)
+LAST_UPDATED_FILE: str = os.path.join(TEMP_DIR, version)

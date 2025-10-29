@@ -16,7 +16,7 @@ date_format = "%d %B %Y"  # matches "19 September 2025"
 # -----------------------------------
 # Updates last_updated.txt
 # -----------------------------------
-def update_last_updated_date(date_of_data: str) -> None:
+def update_version(date_of_data: str) -> None:
     try:
         with open(LAST_UPDATED_FILE, "w") as f:
             f.write(date_of_data.__str__())
@@ -26,7 +26,7 @@ def update_last_updated_date(date_of_data: str) -> None:
         print(f"No {LAST_UPDATED_FILE} found.")
         return None
 
-def get_last_updated_date() -> datetime | None:
+def get_version() -> datetime | None:
     try:
         with open(LAST_UPDATED_FILE, "r") as f:
             data = f.read()

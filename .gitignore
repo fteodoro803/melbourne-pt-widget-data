@@ -2,5 +2,5 @@
 .idea/
 gtfs.zip
 extracted/
-last_updated.txt
+version.txt
 gtfs.sqlite

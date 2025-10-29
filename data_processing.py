@@ -5,7 +5,7 @@ from bs4 import BeautifulSoup
 import re
 import requests
 
-from gtfs import download_gtfs, clean_gtfs, update_last_updated_date, get_last_updated_date, date_format, add_to_database
+from gtfs import download_gtfs, clean_gtfs, update_version, get_version, date_format, add_to_database
 from utils import reset, delete_file
 from files import GTFS_FILE, DATABASE_FILE, EXTRACTED_DIRECTORY
 
@@ -20,22 +20,22 @@ def fetch_gtfs_metadata() -> tuple[datetime, str, BeautifulSoup]:
     Fetch the GTFS dataset page and extract metadata.
 
     Returns:
-        tuple: (last_updated_date, download_link, soup object)
+        tuple: (version_date, download_link, soup object)
     """
     response = requests.get(GTFS_URL)
     soup = BeautifulSoup(response.text, features="html.parser")
 
-    # Extract last updated date
+    # Extract version date
     date_filter = soup.find("th", string="Last Updated Date")
     date_string = date_filter.find_next("td").get_text(strip=True)
-    last_updated = datetime.strptime(date_string, date_format)
+    version_date = datetime.strptime(date_string, date_format)
 
     # Extract download link
     download_filter = soup.find_all("a", attrs={"href": re.compile("gtfs.zip")})
     links = [a.get('href') for a in download_filter]
     download_link = links[0] if links else ""
 
-    return last_updated, download_link, soup
+    return version_date, download_link, soup
 
 
 def parse_transport_types(soup: BeautifulSoup, transport_filter: str) -> dict[str, str]:
@@ -77,7 +77,7 @@ def check_if_update_needed(new_date: datetime) -> bool:
     Returns:
         bool: True if update needed, False otherwise
     """
-    previous_date = get_last_updated_date()
+    previous_date = get_version()
     print(f"Date of new data: {new_date}")
 
     if previous_date and (new_date <= previous_date):
@@ -138,14 +138,14 @@ def update_gtfs_data():
         tuple: True if data was updated, False if not, and Date of Data
     """
     # Fetch metadata
-    date_of_data, download_link, soup = fetch_gtfs_metadata()
+    data_version, download_link, soup = fetch_gtfs_metadata()
 
     # Check if update needed
-    if not check_if_update_needed(date_of_data):
-        return False, date_of_data
+    if not check_if_update_needed(data_version):
+        return False, data_version
 
     # Update last updated date
-    update_last_updated_date(date_of_data.strftime(date_format))
+    update_version(data_version.strftime(date_format))
 
     # Parse transport types
     transportsDict = parse_transport_types(soup, TRANSPORT_FILTER)
@@ -159,7 +159,7 @@ def update_gtfs_data():
     # Cleanup
     cleanup_temp_files()
 
-    return True, date_of_data
+    return True, data_version
 
 
 def main():
