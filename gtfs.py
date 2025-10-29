@@ -16,17 +16,17 @@ date_format = "%d %B %Y"  # matches "19 September 2025"
 # -----------------------------------
 # Updates last_updated.txt
 # -----------------------------------
-def updateLastUpdated(date_of_data: str) -> None:
+def update_last_updated_date(date_of_data: str) -> None:
     try:
         with open(LAST_UPDATED_FILE, "w") as f:
             f.write(date_of_data.__str__())
 
-        print(f"Updated {LAST_UPDATED_FILE} with date: {date_of_data}")
+        print(f"Created/Updated {LAST_UPDATED_FILE} with date: {date_of_data}")
     except FileNotFoundError:
         print(f"No {LAST_UPDATED_FILE} found.")
         return None
 
-def getLastUpdatedDate() -> datetime | None:
+def get_last_updated_date() -> datetime | None:
     try:
         with open(LAST_UPDATED_FILE, "r") as f:
             data = f.read()
@@ -40,19 +40,14 @@ def getLastUpdatedDate() -> datetime | None:
 # -----------------------------------
 # Download the GTFS Schedule ZIP file
 # -----------------------------------
-def downloadGtfs(download_link: str, file_name: str, enabled: bool) -> None:
+def download_gtfs(download_link: str, file_name: str) -> None:
     """
     Download a GTFS ZIP file from a URL.
 
     Parameters:
         download_link (str): URL to download the GTFS file.
         file_name (str): Name to save the downloaded file as.
-        enabled (bool): If False, skip downloading.
     """
-
-    # Skip if disabled
-    if not enabled:
-        return
 
     # Stream download in chunks to avoid loading the whole file into memory
     with requests.get(download_link, stream=True) as r:
@@ -67,7 +62,7 @@ def downloadGtfs(download_link: str, file_name: str, enabled: bool) -> None:
 # -----------------------------------
 # Extract selected files from GTFS ZIP
 # -----------------------------------
-def cleanGtfs(gtfs_zip: str, output_folder: str, keep_folders: [str], keep_files: [str], enabled: bool) -> None:
+def clean_gtfs(gtfs_zip: str, output_folder: str, keep_folders: [str], keep_files: [str]) -> None:
     """
     Extract selected files from inner ZIPs inside a GTFS outer ZIP.
 
@@ -76,12 +71,7 @@ def cleanGtfs(gtfs_zip: str, output_folder: str, keep_folders: [str], keep_files
         output_folder (str): Base folder where extracted files will go.
         keep_folders (list[str]): Only process these transport numbers (e.g. ['2','3']).
         keep_files (list[str]): Only extract these filenames from each inner ZIP (e.g. ['routes.txt','stops.txt']).
-        enabled (bool):
     """
-
-    # Skip if disabled
-    if not enabled:
-        return
 
     # Ensures output folder exists
     os.makedirs(output_folder, exist_ok=True)
@@ -91,25 +81,25 @@ def cleanGtfs(gtfs_zip: str, output_folder: str, keep_folders: [str], keep_files
 
         # 2. Iterate over all files in the zip
         for transport in gtfsRead.namelist():
-            transportNumber = transport.split('/')[0]      # first part of the path, e.g. '2'
+            transport_number = transport.split('/')[0]      # first part of the path, e.g. '2'
 
             # Only process if in keep_folders and is a .zip file
-            if transportNumber in keep_folders and transport.endswith(".zip"):
+            if transport_number in keep_folders and transport.endswith(".zip"):
 
                 # 3. Create subfolder for the transport number
-                subFolder = os.path.join(output_folder, transportNumber)
-                os.makedirs(subFolder, exist_ok=True)
+                subfolder = os.path.join(output_folder, transport_number)
+                os.makedirs(subfolder, exist_ok=True)
 
                 # 4. Read the zip file within the Transport Number's directory
-                innerData = gtfsRead.read(transport)
+                inner_data = gtfsRead.read(transport)
 
-                with zipfile.ZipFile(io.BytesIO(innerData), 'r') as transitRead:
+                with zipfile.ZipFile(io.BytesIO(inner_data), 'r') as transitRead:
                     for file in transitRead.namelist():
 
                         # 5. Save the files specified in keep_files
                         if file in keep_files:
                             data = transitRead.read(file)
-                            out_path = os.path.join(subFolder, file)
+                            out_path = os.path.join(subfolder, file)
 
                             # Save to disk
                             with open(out_path, 'wb') as f:
@@ -122,17 +112,17 @@ def add_to_database(database: str, file_path: str, transports: dict[str, str]) -
     df = pd.read_csv(file_path)
 
     # 2. Figure out file type
-    fileType = ""
+    file_type = ""
     if "trips.txt" in file_path:
-        fileType = "trips"
+        file_type = "trips"
     elif "routes.txt" in file_path:
-        fileType = "routes"
+        file_type = "routes"
     elif "shapes.txt" in file_path:
-        fileType = "shapes"
+        file_type = "shapes"
 
     # 3. Find transport type
     transport_num = re.search(r'\d+', file_path)
-    if len(fileType) == 0 or transport_num is None:
+    if len(file_type) == 0 or transport_num is None:
         return
 
     if transport_num:
@@ -147,5 +137,5 @@ def add_to_database(database: str, file_path: str, transports: dict[str, str]) -
     database = sqlite3.connect(database)
 
     # 5. Save file dataframe to database
-    df.to_sql(f"{transport_str}_{fileType}", database, if_exists="replace", index=False)
-    print(f"Added {transport_str}_{fileType} to database")
+    df.to_sql(f"{transport_str}_{file_type}", database, if_exists="replace", index=False)
+    print(f"Added {transport_str}_{file_type} to database")
