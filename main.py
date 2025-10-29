@@ -16,9 +16,9 @@ def cloud_update_gtfs(request):
             upload_to_cloud_storage(LAST_UPDATED_FILE, BUCKET_NAME, 'last_updated.txt')
             upload_to_cloud_storage(DATABASE_FILE, BUCKET_NAME, 'gtfs.sqlite')
 
-            return 'Data updated successfully!', 200
+            return 'Data updated successfully!\n', 200
         else:
-            return 'No update needed', 200
+            return 'No update needed\n', 200
 
     except Exception as e:
         print(f"Error: {e}")
