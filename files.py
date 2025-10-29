@@ -7,7 +7,7 @@ TEMP_DIR = "/tmp" if IS_CLOUD else "."
 gtfs = "gtfs.zip"
 extracted = "extracted"
 database = "gtfs.sqlite"
-version = "version.txt"
+version = "gtfs_version.txt"
 
 # FILES AND DIRECTORIES
 GTFS_FILE: str = os.path.join(TEMP_DIR, gtfs)
