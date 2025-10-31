@@ -13,8 +13,8 @@ def cloud_update_gtfs(request):
 
         if was_updated:
             # Use the helper function for uploads
-            upload_to_cloud_storage(BUCKET_NAME, VERSION_FILE.path)
-            upload_to_cloud_storage(BUCKET_NAME, DATABASE_FILE.path)
+            upload_to_cloud_storage(BUCKET_NAME, VERSION_FILE)
+            upload_to_cloud_storage(BUCKET_NAME, DATABASE_FILE)
 
             return 'Data updated successfully!\n', 200
         else:
