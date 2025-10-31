@@ -3,4 +3,4 @@
 gtfs.zip
 extracted/
 gtfs_version.txt
-gtfs.sqlite
+gtfs_database.sqlite

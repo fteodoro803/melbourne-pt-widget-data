@@ -9,7 +9,7 @@ import io
 import pandas as pd
 import sqlite3
 
-from files import LAST_UPDATED_FILE
+from files import VERSION_FILE, MyFile
 
 date_format = "%d %B %Y"  # matches "19 September 2025"
 
@@ -18,66 +18,66 @@ date_format = "%d %B %Y"  # matches "19 September 2025"
 # -----------------------------------
 def update_version(date_of_data: str) -> None:
     try:
-        with open(LAST_UPDATED_FILE, "w") as f:
+        with open(VERSION_FILE.path, "w") as f:
             f.write(date_of_data.__str__())
 
-        print(f"Created/Updated {LAST_UPDATED_FILE} with date: {date_of_data}")
+        print(f"Created/Updated {VERSION_FILE.name} with date: {date_of_data}")
     except FileNotFoundError:
-        print(f"No {LAST_UPDATED_FILE} found.")
+        print(f"No {VERSION_FILE} found.")
         return None
 
 def get_version() -> datetime | None:
     try:
-        with open(LAST_UPDATED_FILE, "r") as f:
+        with open(VERSION_FILE.path, "r") as f:
             data = f.read()
             date = datetime.strptime(data, date_format)
             print(f"Date of old data: {date}")
             return date
     except FileNotFoundError:
-        print(f"No {LAST_UPDATED_FILE} found.")
+        print(f"No {VERSION_FILE} found.")
         return None
 
 # -----------------------------------
 # Download the GTFS Schedule ZIP file
 # -----------------------------------
-def download_gtfs(download_link: str, file_name: str) -> None:
+def download_gtfs(download_link: str, file: MyFile) -> None:
     """
     Download a GTFS ZIP file from a URL.
 
     Parameters:
         download_link (str): URL to download the GTFS file.
-        file_name (str): Name to save the downloaded file as.
+        file (MyFile): Name to save the downloaded file as.
     """
 
     # Stream download in chunks to avoid loading the whole file into memory
     with requests.get(download_link, stream=True) as r:
         r.raise_for_status()  # Raise an error if the request failed
-        with open(file_name, 'wb') as f:
+        with open(file.path, 'wb') as f:
             for chunk in r.iter_content(chunk_size=8192):
                 f.write(chunk)
 
-    print(f"Downloaded {file_name}")
+    print(f"Downloaded {file}")
 
 
 # -----------------------------------
 # Extract selected files from GTFS ZIP
 # -----------------------------------
-def clean_gtfs(gtfs_zip: str, output_folder: str, keep_folders: [str], keep_files: [str]) -> None:
+def clean_gtfs(gtfs_zip: MyFile, output_folder: MyFile, keep_folders: [str], keep_files: [str]) -> None:
     """
     Extract selected files from inner ZIPs inside a GTFS outer ZIP.
 
     Parameters:
-        gtfs_zip (str): Path to the outer GTFS ZIP file.
-        output_folder (str): Base folder where extracted files will go.
+        gtfs_zip (MyFile): Path to the outer GTFS ZIP file.
+        output_folder (MyFile): Base folder where extracted files will go.
         keep_folders (list[str]): Only process these transport numbers (e.g. ['2','3']).
         keep_files (list[str]): Only extract these filenames from each inner ZIP (e.g. ['routes.txt','stops.txt']).
     """
 
     # Ensures output folder exists
-    os.makedirs(output_folder, exist_ok=True)
+    os.makedirs(output_folder.path, exist_ok=True)
 
     # 1. Open outer GTFS zip file
-    with zipfile.ZipFile(gtfs_zip, 'r') as gtfsRead:
+    with zipfile.ZipFile(gtfs_zip.path, 'r') as gtfsRead:
 
         # 2. Iterate over all files in the zip
         for transport in gtfsRead.namelist():
@@ -87,7 +87,7 @@ def clean_gtfs(gtfs_zip: str, output_folder: str, keep_folders: [str], keep_file
             if transport_number in keep_folders and transport.endswith(".zip"):
 
                 # 3. Create subfolder for the transport number
-                subfolder = os.path.join(output_folder, transport_number)
+                subfolder = os.path.join(output_folder.path, transport_number)
                 os.makedirs(subfolder, exist_ok=True)
 
                 # 4. Read the zip file within the Transport Number's directory
@@ -107,7 +107,7 @@ def clean_gtfs(gtfs_zip: str, output_folder: str, keep_folders: [str], keep_file
 
                             print(f"Saved {file} from {transport} to {out_path}")
 
-def add_to_database(database: str, file_path: str, transports: dict[str, str]) -> None:
+def add_to_database(database: MyFile, file_path: str, transports: dict[str, str]) -> None:
     # 1. Load file
     df = pd.read_csv(file_path)
 
@@ -134,7 +134,7 @@ def add_to_database(database: str, file_path: str, transports: dict[str, str]) -
     transport_str = transport_str.replace(' ', '_').lower()
 
     # 4. Create/Open database
-    database = sqlite3.connect(database)
+    database = sqlite3.connect(database.path)
 
     # 5. Save file dataframe to database
     df.to_sql(f"{transport_str}_{file_type}", database, if_exists="replace", index=False)

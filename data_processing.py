@@ -100,8 +100,8 @@ def download_and_extract_gtfs(download_link: str, transports_dict: dict[str,str]
     download_gtfs(download_link, GTFS_FILE)
 
     # Extract
-    keepFolders = list(transports_dict.keys())
-    clean_gtfs(GTFS_FILE, EXTRACTED_DIRECTORY, keepFolders, KEEP_FILES)
+    keep_folders = list(transports_dict.keys())
+    clean_gtfs(GTFS_FILE, EXTRACTED_DIRECTORY, keep_folders, KEEP_FILES)
 
 
 def build_database(transports_dict: dict[str,str]) -> None:
@@ -115,7 +115,7 @@ def build_database(transports_dict: dict[str,str]) -> None:
     delete_file(DATABASE_FILE)
 
     # Process all extracted txt files
-    for root, dirs, files in os.walk(EXTRACTED_DIRECTORY):
+    for root, dirs, files in os.walk(EXTRACTED_DIRECTORY.path):
         for filename in files:
             data_file_path = os.path.join(root, filename)
 
@@ -148,13 +148,13 @@ def update_gtfs_data():
     update_version(data_version.strftime(date_format))
 
     # Parse transport types
-    transportsDict = parse_transport_types(soup, TRANSPORT_FILTER)
+    transports_dict = parse_transport_types(soup, TRANSPORT_FILTER)
 
     # Download and process gtfs schedule files
-    download_and_extract_gtfs(download_link, transportsDict)
+    download_and_extract_gtfs(download_link, transports_dict)
 
     # Build database
-    build_database(transportsDict)
+    build_database(transports_dict)
 
     # Cleanup
     cleanup_temp_files()

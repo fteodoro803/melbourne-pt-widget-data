@@ -1,12 +1,15 @@
 import os
 import shutil
 
-from files import DATABASE_FILE, GTFS_FILE, LAST_UPDATED_FILE, EXTRACTED_DIRECTORY
+from files import DATABASE_FILE, GTFS_FILE, VERSION_FILE, EXTRACTED_DIRECTORY, MyFile
 
-def delete_file(path: str) -> None:
+
+def delete_file(file: MyFile) -> None:
     """
     Delete a file or directory (recursively if directory).
     """
+    path = file.path
+
     if os.path.isdir(path):
         shutil.rmtree(path)
         print(f"Deleted directory '{path}'")
@@ -21,9 +24,9 @@ def reset(enabled: bool) -> None:
         return
 
     print(f"Resetting Files")
-    print(f"Deleting extracted folder, last_updated.txt, gtfs.zip, gtfs.sqlite...")
+    print(f"Deleting {EXTRACTED_DIRECTORY.name, VERSION_FILE.name, GTFS_FILE.name, DATABASE_FILE.name}, ...")
     delete_file(EXTRACTED_DIRECTORY)
-    delete_file(LAST_UPDATED_FILE)
+    delete_file(VERSION_FILE)
     delete_file(GTFS_FILE)
     delete_file(DATABASE_FILE)
     print("Reset finished")
