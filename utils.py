@@ -1,7 +1,7 @@
 import os
 import shutil
 
-from files import DATABASE_FILE, GTFS_FILE, VERSION_FILE, EXTRACTED_DIRECTORY, MyFile
+from config import DATABASE_FILE, GTFS_FILE, VERSION_FILE, EXTRACTED_DIRECTORY, MyFile
 
 
 def delete_file(file: MyFile) -> None:

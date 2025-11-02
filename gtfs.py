@@ -9,7 +9,7 @@ import io
 import pandas as pd
 import sqlite3
 
-from files import VERSION_FILE, MyFile
+from config import VERSION_FILE, MyFile
 
 date_format = "%d %B %Y"  # matches "19 September 2025"
 

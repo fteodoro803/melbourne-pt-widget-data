@@ -7,7 +7,8 @@ import requests
 
 from gtfs import download_gtfs, clean_gtfs, update_version, get_version, date_format, add_to_database
 from utils import reset, delete_file
-from files import GTFS_FILE, DATABASE_FILE, EXTRACTED_DIRECTORY
+from config import GTFS_FILE, DATABASE_FILE, EXTRACTED_DIRECTORY
+from cloud import upload_generic_to_cloud_storage
 
 # Constants
 GTFS_URL = "https://opendata.transport.vic.gov.au/dataset/gtfs-schedule"
@@ -25,6 +26,8 @@ def fetch_gtfs_metadata() -> tuple[datetime, str, BeautifulSoup]:
     response = requests.get(GTFS_URL)
     soup = BeautifulSoup(response.text, features="html.parser")
 
+    upload_generic_to_cloud_storage("gtfs.html", response.text)
+
     # Extract version date
     date_filter = soup.find("th", string="Last Updated Date")
     date_string = date_filter.find_next("td").get_text(strip=True)
@@ -33,6 +36,10 @@ def fetch_gtfs_metadata() -> tuple[datetime, str, BeautifulSoup]:
     # Extract download link
     download_filter = soup.find_all("a", attrs={"href": re.compile("gtfs.zip")})
     links = [a.get('href') for a in download_filter]
+
+    if not links:
+        raise ValueError("Could not find GTFS download link on the page")
+
     download_link = links[0] if links else ""
 
     return version_date, download_link, soup
