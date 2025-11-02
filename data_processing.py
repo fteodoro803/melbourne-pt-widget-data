@@ -23,7 +23,13 @@ def fetch_gtfs_metadata() -> tuple[datetime, str, BeautifulSoup]:
     Returns:
         tuple: (version_date, download_link, soup object)
     """
-    response = requests.get(GTFS_URL)
+    headers = {
+        'User-Agent': 'GTFS-Schedule-Updater/1.0 (Educational/Research Project)',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.9',
+    }
+
+    response = requests.get(GTFS_URL, headers=headers, timeout=30)
     soup = BeautifulSoup(response.text, features="html.parser")
 
     upload_string_to_cloud_storage("gtfs.html", response.text)
