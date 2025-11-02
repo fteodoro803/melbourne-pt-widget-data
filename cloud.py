@@ -15,6 +15,6 @@ def upload_generic_to_cloud_storage(name: str, content) -> None:
 
     client = storage.Client()
     bucket = client.bucket(BUCKET_NAME)
-    blob = bucket.blob(content)
-    blob.upload_from_filename(name)
+    blob = bucket.blob(name)
+    blob.upload_from_filename(content)
     print(f"Uploaded {name} to {BUCKET_NAME}")
