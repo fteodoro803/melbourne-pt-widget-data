@@ -1,13 +1,9 @@
 import os
-import re
 import zipfile
 from datetime import datetime
 
 import requests
 import io
-
-import pandas as pd
-import sqlite3
 
 from config import VERSION_FILE, MyFile
 
@@ -17,6 +13,7 @@ date_format = "%d %B %Y"  # matches "19 September 2025"
 # Updates last_updated.txt
 # -----------------------------------
 def update_version(date_of_data: str) -> None:
+    # todo: deprecate this local file version in favour of mongo
     try:
         with open(VERSION_FILE.path, "w") as f:
             f.write(date_of_data.__str__())
@@ -106,36 +103,3 @@ def clean_gtfs(gtfs_zip: MyFile, output_folder: MyFile, keep_folders: [str], kee
                                 f.write(data)
 
                             print(f"Saved {file} from {transport} to {out_path}")
-
-def add_to_database(database: MyFile, file_path: str, transports: dict[str, str]) -> None:
-    # 1. Load file
-    df = pd.read_csv(file_path)
-
-    # 2. Figure out file type
-    file_type = ""
-    if "trips.txt" in file_path:
-        file_type = "trips"
-    elif "routes.txt" in file_path:
-        file_type = "routes"
-    elif "shapes.txt" in file_path:
-        file_type = "shapes"
-
-    # 3. Find transport type
-    transport_num = re.search(r'\d+', file_path)
-    if len(file_type) == 0 or transport_num is None:
-        return
-
-    if transport_num:
-        transport_num = transport_num.group()       # converts to a str
-        transport_str = transports[transport_num]
-    else:
-        return
-
-    transport_str = transport_str.replace(' ', '_').lower()
-
-    # 4. Create/Open database
-    database = sqlite3.connect(database.path)
-
-    # 5. Save file dataframe to database
-    df.to_sql(f"{transport_str}_{file_type}", database, if_exists="replace", index=False)
-    print(f"Added {transport_str}_{file_type} to database")

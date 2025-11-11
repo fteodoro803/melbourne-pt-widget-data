@@ -1,6 +1,7 @@
 from data_processing import update_gtfs_data
 from config import DATABASE_FILE, VERSION_FILE
 from cloud import upload_file_to_cloud_storage
+from database import close_database
 
 
 def cloud_update_gtfs(request):
@@ -20,4 +21,7 @@ def cloud_update_gtfs(request):
     except Exception as e:
         print(f"Error: {e}")
         return f'Error: {str(e)}', 500
+
+    finally:
+        close_database()
 
