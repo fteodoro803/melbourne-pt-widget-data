@@ -4,7 +4,7 @@ from bs4 import BeautifulSoup
 import re
 import requests
 
-from gtfs import download_gtfs, clean_gtfs, update_version, get_version, date_format
+from gtfs import download_gtfs, clean_gtfs, date_format
 from database import build_database, update_data_version, get_data_version, close_database
 from utils import reset, delete_file
 from config import GTFS_FILE, EXTRACTED_DIRECTORY, KEEP_TEMP_FILES
@@ -92,10 +92,9 @@ def check_if_update_needed(new_date: datetime) -> bool:
     Returns:
         bool: True if update needed, False otherwise
     """
-    print(f"Mongo old data version: {get_data_version()}")
-
-    previous_date = get_version()
-    print(f"Date of new data: {new_date}")
+    previous_date = get_data_version()
+    print(f"Old data version: {previous_date}")
+    print(f"New data version: {new_date}")
 
     if previous_date and (new_date <= previous_date):
         print("New data is not newer than previous data, skipping...")
@@ -143,10 +142,9 @@ def update_gtfs_data():
 
     # Check if update needed
     if not check_if_update_needed(data_version):
-        return False, data_version
+        return False
 
     # Update last updated date
-    update_version(data_version.strftime(date_format))
     update_data_version(data_version)
 
     # Parse transport types
@@ -161,7 +159,7 @@ def update_gtfs_data():
     # Cleanup
     cleanup_temp_files()
 
-    return True, data_version
+    return True
 
 
 def main():

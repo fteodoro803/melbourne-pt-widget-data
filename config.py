@@ -19,4 +19,4 @@ DATABASE_FILE: MyFile = MyFile("gtfs_database.sqlite")      # todo: delete
 VERSION_FILE: MyFile  = MyFile("gtfs_version.txt")
 
 # TESTING
-KEEP_TEMP_FILES = True
+KEEP_TEMP_FILES = False

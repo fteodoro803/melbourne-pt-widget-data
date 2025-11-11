@@ -9,34 +9,6 @@ from config import VERSION_FILE, MyFile
 
 date_format = "%d %B %Y"  # matches "19 September 2025"
 
-# -----------------------------------
-# Updates last_updated.txt
-# -----------------------------------
-def update_version(date_of_data: str) -> None:
-    # todo: deprecate this local file version in favour of mongo
-    try:
-        with open(VERSION_FILE.path, "w") as f:
-            f.write(date_of_data.__str__())
-
-        print(f"Created/Updated {VERSION_FILE.name} with date: {date_of_data}")
-    except FileNotFoundError:
-        print(f"No {VERSION_FILE} found.")
-        return None
-
-def get_version() -> datetime | None:
-    try:
-        with open(VERSION_FILE.path, "r") as f:
-            data = f.read()
-            date = datetime.strptime(data, date_format)
-            print(f"Date of old data: {date}")
-            return date
-    except FileNotFoundError:
-        print(f"No {VERSION_FILE} found.")
-        return None
-
-# -----------------------------------
-# Download the GTFS Schedule ZIP file
-# -----------------------------------
 def download_gtfs(download_link: str, file: MyFile) -> None:
     """
     Download a GTFS ZIP file from a URL.
@@ -55,10 +27,6 @@ def download_gtfs(download_link: str, file: MyFile) -> None:
 
     print(f"Downloaded {file}")
 
-
-# -----------------------------------
-# Extract selected files from GTFS ZIP
-# -----------------------------------
 def clean_gtfs(gtfs_zip: MyFile, output_folder: MyFile, keep_folders: [str], keep_files: [str]) -> None:
     """
     Extract selected files from inner ZIPs inside a GTFS outer ZIP.
