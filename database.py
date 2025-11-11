@@ -1,6 +1,7 @@
 import os
 import re
 import pandas as pd
+import numpy as np
 
 from datetime import datetime
 from pymongo import MongoClient
@@ -64,14 +65,13 @@ def add_to_database(file_path: str, transports: dict[str, str]) -> None:
         transport_str = transport_str.replace(' ', '_').lower()
 
         # 5. Dataframe modifications
-        # todo: remove NaN
-        # add version to data entries
+        df = df.replace({np.nan: None})         # remove NaN
+        df['version'] = get_data_version()      # add version to fields
 
         # 6. Save file dataframe to database
-        # df['version'] = version   #todo: get version from misc
         records = df.to_dict('records')
         if collection is not None:
-            collection.insert_many(records)
+            collection.insert_many(records)     # todo: change these to upserts, and add logic for each specific table
             print(f"Added {transport_str}_{file_type} to mongoDB database")
 
     except Exception as e:
