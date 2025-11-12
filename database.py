@@ -51,11 +51,9 @@ def add_to_database(file_path: str, transports: dict[str, str]) -> None:
         time_start = datetime.now()
         print(f"Inserting {len(records)} records to {transport_type}_{file_type}...")
 
-        chunk_size = 10000  # Insert 10k at a time
-        for i in range(0, len(records), chunk_size):
-            chunk = records[i:i + chunk_size]
-            collection.insert_many(chunk, ordered=False)
-            print(f"        {min(i + chunk_size, len(records))}/{len(records)}")
+        # Insertion logic
+        if collection is not None:
+            collection.insert_many(records, ordered=False)
 
         time_difference = (datetime.now() - time_start).seconds
         print(f"        Finished adding records to '{transport_type}_{file_type}', took {time_difference} seconds")
