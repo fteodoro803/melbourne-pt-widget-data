@@ -1,11 +1,17 @@
 import os
+from typing import List, Any, Mapping
+
 import pandas as pd
 import numpy as np
 
 from datetime import datetime
 from pymongo import MongoClient
+from pymongo.database import Database
+from pymongo.collection import Collection
 from pymongo.server_api import ServerApi
-from config import EXTRACTED_DIRECTORY
+from pymongo.synchronous.collection import Collection
+
+from config import EXTRACTED_DIRECTORY, KEEP_OUTDATED_DATA, MOCK_OLD_DATE
 from utils import get_types_from_path
 
 # Mongo
@@ -33,14 +39,14 @@ def build_database(transports_dict: dict[str,str]) -> None:
 def add_to_database(file_path: str, transports: dict[str, str]) -> None:
     try:
         # 1. Select database
-        db = client.gtfs
+        db: Database= client.gtfs
 
         # 2. Load file
         df = pd.read_csv(file_path)
 
         # 3. Determine file and transport types to access target collection
         file_type, transport_type = get_types_from_path(file_path, transports)
-        collection = db[f"{transport_type}_{file_type}"]
+        collection: Collection= db[f"{transport_type}_{file_type}"]
 
         # 4. Dataframe modifications
         df = df.replace({np.nan: None})         # remove NaN
@@ -56,7 +62,7 @@ def add_to_database(file_path: str, transports: dict[str, str]) -> None:
             collection.insert_many(records, ordered=False)
 
         time_difference = (datetime.now() - time_start).seconds
-        print(f"        Finished adding records to '{transport_type}_{file_type}', took {time_difference} seconds")
+        print(f"        Successfully added records, took {time_difference} seconds")
 
     except Exception as e:
         print(e)
@@ -64,8 +70,8 @@ def add_to_database(file_path: str, transports: dict[str, str]) -> None:
 def update_data_version(version: datetime) -> None:
     try:
         # 1. Select database and collection
-        db = client.gtfs
-        collection = db.misc
+        db: Database = client.gtfs
+        collection: Collection= db.misc
 
         # 2. Upsert data
         collection.update_one(
@@ -79,13 +85,46 @@ def update_data_version(version: datetime) -> None:
 
 def get_data_version() -> datetime:
     try:
-        db = client.gtfs
-        collection = db.misc
+        db: Database= client.gtfs
+        collection: Collection= db.misc
 
         document = collection.find_one({"_id": "gtfs_version"})
         if document and "version" in document:
             version: datetime = document["version"]
             return version
+
+    except Exception as e:
+        print(e)
+
+def delete_old_data(version: datetime) -> None:
+    if KEEP_OUTDATED_DATA:
+        return
+
+    try:
+        # 1. Select database
+        db: Database = client.gtfs
+
+        # 2. Get a list of Collections and iterate through them
+        collections = db.list_collection_names()
+
+        for collection_name in collections:
+            # todo: if collection_name in KEEP_FILES
+
+            collection = db[collection_name]
+            time_start = datetime.now()
+
+            filter_query = {"version": {"$lt": version}}
+            deletion_count = collection.count_documents(filter_query)
+
+            if deletion_count > 0:
+                print(f"Deleting {deletion_count} outdated records from {collection_name}...")
+
+                # delete things not the same as version
+                result = collection.delete_many(filter_query)
+                total_time = (datetime.now() - time_start).seconds
+                print(f"        Successfully deleted outdated records, took {total_time} seconds")
+            else:
+                print(f"No outdated records in {collection_name}")
 
     except Exception as e:
         print(e)

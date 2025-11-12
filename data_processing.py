@@ -5,17 +5,15 @@ import re
 import requests
 
 from gtfs import download_gtfs, clean_gtfs, date_format
-from database import build_database, update_data_version, get_data_version, close_database
+from database import build_database, update_data_version, get_data_version, close_database, delete_old_data
 from utils import reset, delete_file
-from config import GTFS_FILE, EXTRACTED_DIRECTORY, KEEP_TEMP_FILES
+from config import GTFS_FILE, EXTRACTED_DIRECTORY, KEEP_TEMP_FILES, IGNORE_VERSION_CHECK, MOCK_OLD_DATE, OLD_DATE
 from cloud import upload_string_to_cloud_storage
 
 # Constants
 GTFS_URL = "https://opendata.transport.vic.gov.au/dataset/gtfs-schedule"
 TRANSPORT_FILTER = "Tram"  # Can be "Metropolitan", "Tram", etc.
 KEEP_FILES = ["routes.txt", "trips.txt", "shapes.txt"]
-
-# Mongo
 
 
 def fetch_gtfs_metadata() -> tuple[datetime, str, BeautifulSoup]:
@@ -39,7 +37,7 @@ def fetch_gtfs_metadata() -> tuple[datetime, str, BeautifulSoup]:
     # Extract version date
     date_filter = soup.find("th", string="Last Updated Date")
     date_string = date_filter.find_next("td").get_text(strip=True)
-    version_date = datetime.strptime(date_string, date_format)
+    version_date = datetime.strptime(date_string, date_format) if not MOCK_OLD_DATE else OLD_DATE
 
     # Extract download link
     download_filter = soup.find_all("a", attrs={"href": re.compile("gtfs.zip")})
@@ -92,6 +90,10 @@ def check_if_update_needed(new_date: datetime) -> bool:
     Returns:
         bool: True if update needed, False otherwise
     """
+    if IGNORE_VERSION_CHECK:
+        print("[TEST] Skipping version check")
+        return True
+
     previous_date = get_data_version()
     print(f"Old data version: {previous_date}")
     print(f"New data version: {new_date}")
@@ -123,6 +125,7 @@ def download_and_extract_gtfs(download_link: str, transports_dict: dict[str,str]
 def cleanup_temp_files() -> None:
     """Remove temporary files to save space."""
     if KEEP_TEMP_FILES:
+        print("[TEST] Skipping cleanup of temporary files")
         return
 
     delete_file(GTFS_FILE)
@@ -157,6 +160,7 @@ def update_gtfs_data():
     build_database(transports_dict)
 
     # Cleanup
+    delete_old_data(data_version)
     cleanup_temp_files()
 
     return True

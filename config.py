@@ -1,4 +1,6 @@
 import os
+from datetime import datetime
+
 
 class MyFile:
     def __init__(self, name):
@@ -18,5 +20,10 @@ EXTRACTED_DIRECTORY: MyFile = MyFile("extracted")
 DATABASE_FILE: MyFile = MyFile("gtfs_database.sqlite")      # todo: delete
 VERSION_FILE: MyFile  = MyFile("gtfs_version.txt")
 
-# TESTING
+# TESTING (should be all False in deployment)
 KEEP_TEMP_FILES = False
+IGNORE_VERSION_CHECK = True
+MOCK_OLD_DATE = False            # pretends all date is from 1 January 1990
+KEEP_OUTDATED_DATA = False       # in MongoDB Database
+
+OLD_DATE = datetime(1990,1,1)
