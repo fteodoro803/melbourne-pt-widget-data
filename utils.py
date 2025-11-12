@@ -1,5 +1,6 @@
 import os
 import shutil
+import re
 
 from config import DATABASE_FILE, GTFS_FILE, VERSION_FILE, EXTRACTED_DIRECTORY, MyFile
 
@@ -30,3 +31,44 @@ def reset(enabled: bool) -> None:
     delete_file(GTFS_FILE)
     delete_file(DATABASE_FILE)
     print("Reset finished")
+
+def get_types_from_path(file_path: str, transports: dict[str, str]) -> tuple[str, str]:
+    """
+    Extracts the GTFS file type (e.g., trips, routes, shapes)
+    and the transport type (mapped from number in the filename).
+
+    Raises:
+        ValueError: if either type cannot be determined.
+    """
+
+    # 1. Determine file type from path
+    if "trips.txt" in file_path:
+        file_type = "trips"
+    elif "routes.txt" in file_path:
+        file_type = "routes"
+    elif "shapes.txt" in file_path:
+        file_type = "shapes"
+    else:
+        file_type = None
+
+    # 2. Extract transport number from path
+    match = re.search(r'\d+', file_path)
+    transport_num = match.group() if match else None
+
+    # 3. Validate presence of both
+    if not file_type or not transport_num:
+        raise ValueError(
+            f"Could not determine valid file or transport types for path: '{file_path}'"
+        )
+
+    # 4. Get transport name from dictionary
+    transport_str = transports.get(transport_num)
+    if not transport_str:
+        raise ValueError(
+            f"Transport number '{transport_num}' not found in dictionary: {transports}"
+        )
+
+    # 5. Normalise transport string
+    transport_str = transport_str.replace(' ', '_').lower()
+
+    return file_type, transport_str

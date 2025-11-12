@@ -1,5 +1,4 @@
 import os
-import re
 import pandas as pd
 import numpy as np
 
@@ -7,6 +6,7 @@ from datetime import datetime
 from pymongo import MongoClient
 from pymongo.server_api import ServerApi
 from config import EXTRACTED_DIRECTORY
+from utils import get_types_from_path
 
 # Mongo
 MONGO_PASSWORD = "1wxN24DvwXKy55yV"     # todo: change password then make it a secret probably
@@ -38,41 +38,27 @@ def add_to_database(file_path: str, transports: dict[str, str]) -> None:
         # 2. Load file
         df = pd.read_csv(file_path)
 
-        # 3. Figure out file type
-        file_type = ""
-        collection = None
-        if "trips.txt" in file_path:
-            file_type = "trips"
-            collection = db.trips
-        elif "routes.txt" in file_path:
-            file_type = "routes"
-            collection = db.routes
-        elif "shapes.txt" in file_path:
-            file_type = "shapes"
-            collection = db.shapes
+        # 3. Determine file and transport types to access target collection
+        file_type, transport_type = get_types_from_path(file_path, transports)
+        collection = db[f"{transport_type}_{file_type}"]
 
-        # 4. Find transport type
-        transport_num = re.search(r'\d+', file_path)
-        if len(file_type) == 0 or transport_num is None:
-            return
-
-        if transport_num:
-            transport_num = transport_num.group()       # converts to a str
-            transport_str = transports[transport_num]
-        else:
-            return
-
-        transport_str = transport_str.replace(' ', '_').lower()
-
-        # 5. Dataframe modifications
+        # 4. Dataframe modifications
         df = df.replace({np.nan: None})         # remove NaN
         df['version'] = get_data_version()      # add version to fields
 
-        # 6. Save file dataframe to database
+        # 5. Save file dataframe to database
         records = df.to_dict('records')
-        if collection is not None:
-            collection.insert_many(records)     # todo: change these to upserts, and add logic for each specific table
-            print(f"Added {transport_str}_{file_type} to mongoDB database")
+        time_start = datetime.now()
+        print(f"Inserting {len(records)} records to {transport_type}_{file_type}...")
+
+        chunk_size = 10000  # Insert 10k at a time
+        for i in range(0, len(records), chunk_size):
+            chunk = records[i:i + chunk_size]
+            collection.insert_many(chunk, ordered=False)
+            print(f"        {min(i + chunk_size, len(records))}/{len(records)}")
+
+        time_difference = (datetime.now() - time_start).seconds
+        print(f"        Finished adding records to '{transport_type}_{file_type}', took {time_difference} seconds")
 
     except Exception as e:
         print(e)
