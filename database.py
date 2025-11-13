@@ -16,7 +16,7 @@ from utils import get_types_from_path, get_keep_file_basenames
 client = MongoClient(
     MONGO_URI,
     server_api=ServerApi('1'),
-    tlsCAFile = certifi.where()
+    tlsCAFile = certifi.where(),
 )
 
 def build_database(transports_dict: dict[str,str]) -> None:
@@ -26,6 +26,8 @@ def build_database(transports_dict: dict[str,str]) -> None:
     Args:
         transports_dict: Dictionary of transport numbers and types
     """
+
+    print(f"CERTIFI TEST: {certifi.where()}")
 
     # Process all extracted txt files
     for root, dirs, files in os.walk(EXTRACTED_DIRECTORY.path):
