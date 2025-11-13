@@ -7,14 +7,9 @@ import requests
 from gtfs import download_gtfs, clean_gtfs, date_format
 from database import build_database, update_data_version, get_data_version, close_database, delete_old_data
 from utils import reset, delete_file
-from config import GTFS_FILE, EXTRACTED_DIRECTORY, KEEP_TEMP_FILES, IGNORE_VERSION_CHECK, MOCK_OLD_DATE, OLD_DATE
+from config import GTFS_FILE, EXTRACTED_DIRECTORY, KEEP_TEMP_FILES, IGNORE_VERSION_CHECK, MOCK_OLD_DATE, OLD_DATE, \
+    GTFS_URL, TRANSPORT_FILTER, KEEP_FILES
 from cloud import upload_string_to_cloud_storage
-
-# Constants
-GTFS_URL = "https://opendata.transport.vic.gov.au/dataset/gtfs-schedule"
-TRANSPORT_FILTER = "Tram"  # Can be "Metropolitan", "Tram", etc.
-KEEP_FILES = ["routes.txt", "trips.txt", "shapes.txt"]
-
 
 def fetch_gtfs_metadata() -> tuple[datetime, str, BeautifulSoup]:
     """
@@ -34,12 +29,17 @@ def fetch_gtfs_metadata() -> tuple[datetime, str, BeautifulSoup]:
 
     upload_string_to_cloud_storage("gtfs.html", response.text)
 
-    # Extract version date
+    # 1. Extract version date
     date_filter = soup.find("th", string="Last Updated Date")
     date_string = date_filter.find_next("td").get_text(strip=True)
-    version_date = datetime.strptime(date_string, date_format) if not MOCK_OLD_DATE else OLD_DATE
+    version_date = datetime.strptime(date_string, date_format)
 
-    # Extract download link
+    # Test
+    if MOCK_OLD_DATE:
+        version_date = OLD_DATE
+        print("[TEST] Using mocked old date")
+
+    # 2. Extract download link
     download_filter = soup.find_all("a", attrs={"href": re.compile("gtfs.zip")})
     links = [a.get('href') for a in download_filter]
 

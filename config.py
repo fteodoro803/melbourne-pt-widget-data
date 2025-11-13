@@ -1,7 +1,6 @@
 import os
 from datetime import datetime
 
-
 class MyFile:
     def __init__(self, name):
         self.name = name
@@ -9,8 +8,13 @@ class MyFile:
     def __str__(self):
         return self.name
 
+# DATA PROCESSING
+GTFS_URL = "https://opendata.transport.vic.gov.au/dataset/gtfs-schedule"
+TRANSPORT_FILTER = "Tram"  # Can be "Metropolitan", "Tram", etc.
+KEEP_FILES = ["routes.txt", "trips.txt", "shapes.txt", "agency.txt"]
+
 # CLOUD
-IS_CLOUD = os.getenv('FUNCTION_TARGET') is not None     # Detects if running on Google Cloud or Local
+IS_CLOUD = os.getenv('FUNCTION_TARGET') is not None     # Detects if running on Google Cloud or Locally
 TEMP_DIR = "/tmp" if IS_CLOUD else "."
 BUCKET_NAME = "ptv-widget-gtfs-schedule"
 
