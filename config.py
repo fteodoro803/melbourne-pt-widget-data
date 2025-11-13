@@ -26,7 +26,7 @@ VERSION_FILE: MyFile  = MyFile("gtfs_version.txt")
 # MONGO
 MONGO_PASSWORD = "1wxN24DvwXKy55yV"     # todo: change password then make it a secret probably
 MONGO_URI = f"mongodb+srv://fernandoagustin803_db_user:{MONGO_PASSWORD}@cluster0.kubarsp.mongodb.net/?appName=Cluster0"
-MONGO_DATABASE = "gtfs"
+MONGO_DATABASE = "live"
 
 # TESTING (should be all False in deployment)
 KEEP_TEMP_FILES = False
@@ -36,4 +36,4 @@ KEEP_OUTDATED_DATA = False  # in MongoDB Database
 USE_TEST_MONGODB = False    # Switches to test database
 
 OLD_DATE = datetime(1990,1,1)
-MONGO_DATABASE = f"{MONGO_DATABASE}_test" if USE_TEST_MONGODB else MONGO_DATABASE
+MONGO_DATABASE = f"test" if USE_TEST_MONGODB else MONGO_DATABASE
