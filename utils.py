@@ -2,8 +2,8 @@ import os
 import shutil
 import re
 
-from config import DATABASE_FILE, GTFS_FILE, VERSION_FILE, EXTRACTED_DIRECTORY, MyFile
-
+from config import DATABASE_FILE, GTFS_FILE, VERSION_FILE, EXTRACTED_DIRECTORY, MyFile, KEEP_FILES
+from pathlib import Path
 
 def delete_file(file: MyFile) -> None:
     """
@@ -41,15 +41,8 @@ def get_types_from_path(file_path: str, transports: dict[str, str]) -> tuple[str
         ValueError: if either type cannot be determined.
     """
 
-    # 1. Determine file type from path
-    if "trips.txt" in file_path:
-        file_type = "trips"
-    elif "routes.txt" in file_path:
-        file_type = "routes"
-    elif "shapes.txt" in file_path:
-        file_type = "shapes"
-    else:
-        file_type = None
+    # 1. Determine GTFS file type from path
+    file_type = Path(file_path).stem
 
     # 2. Extract transport number from path
     match = re.search(r'\d+', file_path)
@@ -72,3 +65,12 @@ def get_types_from_path(file_path: str, transports: dict[str, str]) -> tuple[str
     transport_str = transport_str.replace(' ', '_').lower()
 
     return file_type, transport_str
+
+def get_keep_file_basenames() -> list[str]:
+    """
+    Return the base names (without extensions) of GTFS Schedule files that are kept.
+
+    Example:
+        ['stops.txt', 'routes.txt'] → ['stops', 'routes']
+    """
+    return [Path(file).stem for file in KEEP_FILES]

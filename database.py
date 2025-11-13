@@ -1,5 +1,4 @@
 import os
-from typing import List, Any, Mapping
 
 import pandas as pd
 import numpy as np
@@ -12,7 +11,7 @@ from pymongo.server_api import ServerApi
 from pymongo.synchronous.collection import Collection
 
 from config import EXTRACTED_DIRECTORY, KEEP_OUTDATED_DATA, MOCK_OLD_DATE
-from utils import get_types_from_path
+from utils import get_types_from_path, get_keep_file_basenames
 
 # Mongo
 MONGO_PASSWORD = "1wxN24DvwXKy55yV"     # todo: change password then make it a secret probably
@@ -98,29 +97,37 @@ def get_data_version() -> datetime:
 
 def delete_old_data(version: datetime) -> None:
     if KEEP_OUTDATED_DATA:
+        print("[TEST] Keeping outdated data")
         return
 
     try:
-        # 1. Select database
+        # 1. Select database'
         db: Database = client.gtfs
 
         # 2. Get a list of Collections and iterate through them
         collections = db.list_collection_names()
+        saved_gtfs_folders = get_keep_file_basenames()
+        # print(f"Collections: {collections} | Saved GTFS Folders: {saved_gtfs_folders}")
+
+        # Keep only collections that contain any of the saved GTFS folder names
+        collections = [
+            c for c in collections
+            if any(folder in c for folder in saved_gtfs_folders)
+        ]
+        # print(f"Filtered Collections: {collections}")
 
         for collection_name in collections:
-            # todo: if collection_name in KEEP_FILES
-
             collection = db[collection_name]
             time_start = datetime.now()
 
+            # 3. Delete outdated documents
             filter_query = {"version": {"$lt": version}}
             deletion_count = collection.count_documents(filter_query)
 
             if deletion_count > 0:
                 print(f"Deleting {deletion_count} outdated records from {collection_name}...")
 
-                # delete things not the same as version
-                result = collection.delete_many(filter_query)
+                collection.delete_many(filter_query)
                 total_time = (datetime.now() - time_start).seconds
                 print(f"        Successfully deleted outdated records, took {total_time} seconds")
             else:
