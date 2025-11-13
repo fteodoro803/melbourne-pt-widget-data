@@ -6,17 +6,14 @@ import numpy as np
 from datetime import datetime
 from pymongo import MongoClient
 from pymongo.database import Database
-from pymongo.collection import Collection
 from pymongo.server_api import ServerApi
 from pymongo.synchronous.collection import Collection
 
-from config import EXTRACTED_DIRECTORY, KEEP_OUTDATED_DATA, MOCK_OLD_DATE
+from config import EXTRACTED_DIRECTORY, KEEP_OUTDATED_DATA, MONGO_URI, MONGO_DATABASE
 from utils import get_types_from_path, get_keep_file_basenames
 
 # Mongo
-MONGO_PASSWORD = "1wxN24DvwXKy55yV"     # todo: change password then make it a secret probably
-uri = f"mongodb+srv://fernandoagustin803_db_user:{MONGO_PASSWORD}@cluster0.kubarsp.mongodb.net/?appName=Cluster0"
-client = MongoClient(uri, server_api=ServerApi('1'))
+client = MongoClient(MONGO_URI, server_api=ServerApi('1'))
 
 def build_database(transports_dict: dict[str,str]) -> None:
     """
@@ -38,7 +35,7 @@ def build_database(transports_dict: dict[str,str]) -> None:
 def add_to_database(file_path: str, transports: dict[str, str]) -> None:
     try:
         # 1. Select database
-        db: Database= client.gtfs
+        db: Database= client[MONGO_DATABASE]
 
         # 2. Load file
         df = pd.read_csv(file_path)
@@ -69,7 +66,7 @@ def add_to_database(file_path: str, transports: dict[str, str]) -> None:
 def update_data_version(version: datetime) -> None:
     try:
         # 1. Select database and collection
-        db: Database = client.gtfs
+        db: Database = client[MONGO_DATABASE]
         collection: Collection= db.misc
 
         # 2. Upsert data
@@ -84,7 +81,7 @@ def update_data_version(version: datetime) -> None:
 
 def get_data_version() -> datetime:
     try:
-        db: Database= client.gtfs
+        db: Database= client[MONGO_DATABASE]
         collection: Collection= db.misc
 
         document = collection.find_one({"_id": "gtfs_version"})
@@ -102,7 +99,7 @@ def delete_old_data(version: datetime) -> None:
 
     try:
         # 1. Select database'
-        db: Database = client.gtfs
+        db: Database = client[MONGO_DATABASE]
 
         # 2. Get a list of Collections and iterate through them
         collections = db.list_collection_names()
