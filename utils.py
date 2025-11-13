@@ -2,7 +2,7 @@ import os
 import shutil
 import re
 
-from config import DATABASE_FILE, GTFS_FILE, VERSION_FILE, EXTRACTED_DIRECTORY, MyFile, KEEP_FILES
+from config import GTFS_FILE, VERSION_FILE, EXTRACTED_DIRECTORY, MyFile, KEEP_FILES
 from pathlib import Path
 
 def delete_file(file: MyFile) -> None:
@@ -25,11 +25,10 @@ def reset(enabled: bool) -> None:
         return
 
     print(f"Resetting Files")
-    print(f"Deleting {EXTRACTED_DIRECTORY.name, VERSION_FILE.name, GTFS_FILE.name, DATABASE_FILE.name}, ...")
+    print(f"Deleting {EXTRACTED_DIRECTORY.name, VERSION_FILE.name, GTFS_FILE.name}, ...")
     delete_file(EXTRACTED_DIRECTORY)
     delete_file(VERSION_FILE)
     delete_file(GTFS_FILE)
-    delete_file(DATABASE_FILE)
     print("Reset finished")
 
 def get_types_from_path(file_path: str, transports: dict[str, str]) -> tuple[str, str]:
