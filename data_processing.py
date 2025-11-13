@@ -1,20 +1,15 @@
-import os
 from datetime import datetime
 
 from bs4 import BeautifulSoup
 import re
 import requests
 
-from gtfs import download_gtfs, clean_gtfs, update_version, get_version, date_format, add_to_database
+from gtfs import download_gtfs, clean_gtfs, date_format
+from database import build_database, update_data_version, get_data_version, close_database, delete_old_data
 from utils import reset, delete_file
-from config import GTFS_FILE, DATABASE_FILE, EXTRACTED_DIRECTORY
+from config import GTFS_FILE, EXTRACTED_DIRECTORY, KEEP_TEMP_FILES, IGNORE_VERSION_CHECK, MOCK_OLD_DATE, OLD_DATE, \
+    GTFS_URL, TRANSPORT_FILTER, KEEP_FILES
 from cloud import upload_string_to_cloud_storage
-
-# Constants
-GTFS_URL = "https://opendata.transport.vic.gov.au/dataset/gtfs-schedule"
-TRANSPORT_FILTER = "Tram"  # Can be "Metropolitan", "Tram", etc.
-KEEP_FILES = ["routes.txt", "trips.txt", "shapes.txt"]
-
 
 def fetch_gtfs_metadata() -> tuple[datetime, str, BeautifulSoup]:
     """
@@ -34,12 +29,17 @@ def fetch_gtfs_metadata() -> tuple[datetime, str, BeautifulSoup]:
 
     upload_string_to_cloud_storage("gtfs.html", response.text)
 
-    # Extract version date
+    # 1. Extract version date
     date_filter = soup.find("th", string="Last Updated Date")
     date_string = date_filter.find_next("td").get_text(strip=True)
     version_date = datetime.strptime(date_string, date_format)
 
-    # Extract download link
+    # Test
+    if MOCK_OLD_DATE:
+        version_date = OLD_DATE
+        print("[TEST] Using mocked old date")
+
+    # 2. Extract download link
     download_filter = soup.find_all("a", attrs={"href": re.compile("gtfs.zip")})
     links = [a.get('href') for a in download_filter]
 
@@ -90,8 +90,13 @@ def check_if_update_needed(new_date: datetime) -> bool:
     Returns:
         bool: True if update needed, False otherwise
     """
-    previous_date = get_version()
-    print(f"Date of new data: {new_date}")
+    if IGNORE_VERSION_CHECK:
+        print("[TEST] Skipping version check")
+        return True
+
+    previous_date = get_data_version()
+    print(f"Old data version: {previous_date}")
+    print(f"New data version: {new_date}")
 
     if previous_date and (new_date <= previous_date):
         print("New data is not newer than previous data, skipping...")
@@ -117,27 +122,12 @@ def download_and_extract_gtfs(download_link: str, transports_dict: dict[str,str]
     clean_gtfs(GTFS_FILE, EXTRACTED_DIRECTORY, keep_folders, KEEP_FILES)
 
 
-def build_database(transports_dict: dict[str,str]) -> None:
-    """
-    Build SQLite database from extracted GTFS files.
-
-    Args:
-        transports_dict: Dictionary of transport numbers and types
-    """
-    # Delete old database
-    delete_file(DATABASE_FILE)
-
-    # Process all extracted txt files
-    for root, dirs, files in os.walk(EXTRACTED_DIRECTORY.path):
-        for filename in files:
-            data_file_path = os.path.join(root, filename)
-
-            if data_file_path.endswith(".txt"):
-                add_to_database(DATABASE_FILE, data_file_path, transports_dict)
-
-
 def cleanup_temp_files() -> None:
     """Remove temporary files to save space."""
+    if KEEP_TEMP_FILES:
+        print("[TEST] Skipping cleanup of temporary files")
+        return
+
     delete_file(GTFS_FILE)
     delete_file(EXTRACTED_DIRECTORY)
 
@@ -155,10 +145,10 @@ def update_gtfs_data():
 
     # Check if update needed
     if not check_if_update_needed(data_version):
-        return False, data_version
+        return False
 
     # Update last updated date
-    update_version(data_version.strftime(date_format))
+    update_data_version(data_version)
 
     # Parse transport types
     transports_dict = parse_transport_types(soup, TRANSPORT_FILTER)
@@ -170,9 +160,10 @@ def update_gtfs_data():
     build_database(transports_dict)
 
     # Cleanup
+    delete_old_data(data_version)
     cleanup_temp_files()
 
-    return True, data_version
+    return True
 
 
 def main():
@@ -188,6 +179,7 @@ def main():
     finally:
         # Test reset if needed
         reset(RESET_FILES)
+        close_database()
 
 
 if __name__ == "__main__":

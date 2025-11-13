@@ -1,8 +1,9 @@
 import os
 import shutil
+import re
 
-from config import DATABASE_FILE, GTFS_FILE, VERSION_FILE, EXTRACTED_DIRECTORY, MyFile
-
+from config import GTFS_FILE, VERSION_FILE, EXTRACTED_DIRECTORY, MyFile, KEEP_FILES
+from pathlib import Path
 
 def delete_file(file: MyFile) -> None:
     """
@@ -24,9 +25,51 @@ def reset(enabled: bool) -> None:
         return
 
     print(f"Resetting Files")
-    print(f"Deleting {EXTRACTED_DIRECTORY.name, VERSION_FILE.name, GTFS_FILE.name, DATABASE_FILE.name}, ...")
+    print(f"Deleting {EXTRACTED_DIRECTORY.name, VERSION_FILE.name, GTFS_FILE.name}, ...")
     delete_file(EXTRACTED_DIRECTORY)
     delete_file(VERSION_FILE)
     delete_file(GTFS_FILE)
-    delete_file(DATABASE_FILE)
     print("Reset finished")
+
+def get_types_from_path(file_path: str, transports: dict[str, str]) -> tuple[str, str]:
+    """
+    Extracts the GTFS file type (e.g., trips, routes, shapes)
+    and the transport type (mapped from number in the filename).
+
+    Raises:
+        ValueError: if either type cannot be determined.
+    """
+
+    # 1. Determine GTFS file type from path
+    file_type = Path(file_path).stem
+
+    # 2. Extract transport number from path
+    match = re.search(r'\d+', file_path)
+    transport_num = match.group() if match else None
+
+    # 3. Validate presence of both
+    if not file_type or not transport_num:
+        raise ValueError(
+            f"Could not determine valid file or transport types for path: '{file_path}'"
+        )
+
+    # 4. Get transport name from dictionary
+    transport_str = transports.get(transport_num)
+    if not transport_str:
+        raise ValueError(
+            f"Transport number '{transport_num}' not found in dictionary: {transports}"
+        )
+
+    # 5. Normalise transport string
+    transport_str = transport_str.replace(' ', '_').lower()
+
+    return file_type, transport_str
+
+def get_keep_file_basenames() -> list[str]:
+    """
+    Return the base names (without extensions) of GTFS Schedule files that are kept.
+
+    Example:
+        ['stops.txt', 'routes.txt'] → ['stops', 'routes']
+    """
+    return [Path(file).stem for file in KEEP_FILES]
