@@ -28,12 +28,12 @@ MONGO_PASSWORD = "1wxN24DvwXKy55yV"     # todo: change password then make it a s
 MONGO_URI = f"mongodb+srv://fernandoagustin803_db_user:{MONGO_PASSWORD}@cluster0.kubarsp.mongodb.net/?appName=Cluster0"
 MONGO_DATABASE = "live"
 
-# TESTING (should be all False in deployment)
+# TESTING (should all be False in deployment)
 KEEP_TEMP_FILES = False
 IGNORE_VERSION_CHECK = False
 MOCK_OLD_DATE = False    # pretends all date is from 1 January 1990
 KEEP_OUTDATED_DATA = False  # in MongoDB Database
-USE_TEST_MONGODB = False    # Switches to test database
+USE_LIVE_MONGODB = False    # Switches to test database
 
 OLD_DATE = datetime(1990,1,1)
-MONGO_DATABASE = f"test" if USE_TEST_MONGODB else MONGO_DATABASE
+MONGO_DATABASE = MONGO_DATABASE if USE_LIVE_MONGODB else "test"
