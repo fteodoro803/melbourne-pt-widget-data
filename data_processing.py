@@ -5,7 +5,8 @@ import re
 import requests
 
 from gtfs import download_gtfs, clean_gtfs, date_format
-from database import build_database, update_data_version, get_data_version, close_database, delete_old_data
+from database import build_database, update_data_version, get_data_version, close_database, delete_old_data, \
+    is_db_connected
 from utils import reset, delete_file
 from config import GTFS_FILE, EXTRACTED_DIRECTORY, KEEP_TEMP_FILES, IGNORE_VERSION_CHECK, MOCK_OLD_DATE, OLD_DATE, \
     GTFS_URL, TRANSPORT_FILTER, KEEP_FILES
@@ -140,6 +141,10 @@ def update_gtfs_data():
     Returns:
         tuple: True if data was updated, False if not, and Date of Data
     """
+    # Check MongoDB if alive
+    if not is_db_connected():
+        raise Exception("MongoDB unreachable, could not update GTFS data")
+
     # Fetch metadata
     data_version, download_link, soup = fetch_gtfs_metadata()
 
@@ -167,8 +172,7 @@ def update_gtfs_data():
 
 
 def main():
-    """Entry point for local testing."""
-    RESET_FILES = False
+    RESET_FILES = False     # todo: this is in the wrong place
 
     try:
         update_gtfs_data()
