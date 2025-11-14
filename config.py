@@ -33,10 +33,10 @@ MONGO_URI = f"mongodb+srv://fernandoagustin803_db_user:{MONGO_PASSWORD}@cluster0
 MONGO_DATABASE = "live"
 
 # TEST FLAGS (should all be False in deployment)
-KEEP_TEMP_FILES = False
+KEEP_TEMP_FILES = True
 IGNORE_VERSION_CHECK = False
 MOCK_OLD_DATE = False    # pretends all date is from 1 January 1990
-KEEP_OUTDATED_DATA = False  # in MongoDB Database
+KEEP_OUTDATED_DATA = True  # in MongoDB Database
 USE_LIVE_MONGODB = False    # Switches to test database
 
 OLD_DATE = datetime(1990,1,1)
