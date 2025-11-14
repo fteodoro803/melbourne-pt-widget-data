@@ -4,9 +4,9 @@ import re
 import requests
 
 from gtfs import download_gtfs, clean_gtfs, date_format
-from database import build_database, update_data_version, get_data_version, close_database, delete_old_data, \
-    is_db_connected, connect_to_database
-from utils import reset, delete_file
+from database import add_gtfs_data, update_data_version, get_data_version, delete_old_data, \
+    is_db_connected
+from utils import delete_file
 from config import GTFS_FILE, EXTRACTED_DIRECTORY, KEEP_TEMP_FILES, IGNORE_VERSION_CHECK, MOCK_OLD_DATE, OLD_DATE, \
     GTFS_URL, TRANSPORT_FILTER, KEEP_FILES
 from cloud import upload_string_to_cloud_storage
@@ -21,7 +21,6 @@ def update_gtfs_data():
         tuple: True if data was updated, False if not, and Date of Data
     """
     # Open MongoDB and check status
-    connect_to_database()
     if not is_db_connected():
         raise Exception("MongoDB unreachable, could not update GTFS data")
 
@@ -42,7 +41,7 @@ def update_gtfs_data():
     download_and_extract_gtfs(download_link, transports_dict)
 
     # Build database
-    build_database(transports_dict)
+    add_gtfs_data(transports_dict)
 
     # Cleanup
     delete_old_data(data_version)

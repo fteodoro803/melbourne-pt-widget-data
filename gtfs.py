@@ -1,11 +1,10 @@
 import os
 import zipfile
-from datetime import datetime
 
 import requests
 import io
 
-from config import VERSION_FILE, MyFile
+from config import MyFile
 
 date_format = "%d %B %Y"  # matches "19 September 2025"
 

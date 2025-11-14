@@ -13,13 +13,7 @@ from config import EXTRACTED_DIRECTORY, KEEP_OUTDATED_DATA, MONGO_URI, MONGO_DAT
 from utils import get_types_from_path, get_keep_file_basenames
 
 # Mongo
-client: MongoClient | None = None
-
-def connect_to_database() -> None:
-    global client       # uses database.py's client
-
-    if client is None:
-        client = MongoClient(
+client: MongoClient = MongoClient(
             MONGO_URI,
             server_api=ServerApi('1'),
             tlsCAFile=certifi.where(),
@@ -34,23 +28,6 @@ def is_db_connected() -> bool:
         print("Could not connect to MongoDB")
         print(f"     Error: {e}")
         return False
-
-def build_database(transports_dict: dict[str,str]) -> None:
-    """
-    Build MongoDB database from extracted GTFS files.
-
-    Args:
-        transports_dict: Dictionary of transport numbers and types
-    """
-
-    # Process all extracted txt files
-    for root, dirs, files in os.walk(EXTRACTED_DIRECTORY.path):
-        for filename in files:
-            data_file_path = os.path.join(root, filename)
-
-            if data_file_path.endswith(".txt"):
-                add_to_database(data_file_path, transports_dict)
-
 
 def add_to_database(file_path: str, transports: dict[str, str]) -> None:
     try:
@@ -153,5 +130,18 @@ def delete_old_data(version: datetime) -> None:
     except Exception as e:
         print(e)
 
-def close_database() -> None:
-    client.close()
+def add_gtfs_data(transports_dict: dict[str,str]) -> None:
+    """
+    Build MongoDB database from extracted GTFS files.
+
+    Args:
+        transports_dict: Dictionary of transport numbers and types
+    """
+
+    # Process all extracted txt files
+    for root, dirs, files in os.walk(EXTRACTED_DIRECTORY.path):
+        for filename in files:
+            data_file_path = os.path.join(root, filename)
+
+            if data_file_path.endswith(".txt"):
+                add_to_database(data_file_path, transports_dict)

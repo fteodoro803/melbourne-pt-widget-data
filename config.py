@@ -25,7 +25,6 @@ BUCKET_NAME = "ptv-widget-gtfs-schedule"
 # FILES AND DIRECTORIES
 GTFS_FILE: MyFile = MyFile("gtfs.zip")
 EXTRACTED_DIRECTORY: MyFile = MyFile("extracted")
-VERSION_FILE: MyFile  = MyFile("gtfs_version.txt")
 
 # MONGO
 MONGO_PASSWORD = os.getenv("MONGO_PASSWORD")
