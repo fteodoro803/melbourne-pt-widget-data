@@ -1,9 +1,8 @@
 # melbourne-pt-widget-data
 Scripts used to handle gtfs data for Melbourne PT Widget
 
-FastApi
-- Run:
-     ```fastapi dev api.py```
-- If it doesn't refresh properly:
-     1. ```tasklist /FI "IMAGENAME eq python.exe"```
-     2. ```taskkill /PID {PID NUMBER} /F```
+For local development:
+1. Generate .env file and add API keys/passwords
+   - ```python setup_env.py```
+2. Start
+   - ```python local_testing.py```

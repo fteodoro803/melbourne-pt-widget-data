@@ -1,5 +1,6 @@
 import os
 from datetime import datetime
+from dotenv import load_dotenv
 
 class MyFile:
     def __init__(self, name):
@@ -7,6 +8,9 @@ class MyFile:
         self.path = os.path.join(TEMP_DIR, name)
     def __str__(self):
         return self.name
+
+# LOADS .ENV
+load_dotenv()
 
 # DATA PROCESSING
 GTFS_URL = "https://opendata.transport.vic.gov.au/dataset/gtfs-schedule"
@@ -24,7 +28,7 @@ EXTRACTED_DIRECTORY: MyFile = MyFile("extracted")
 VERSION_FILE: MyFile  = MyFile("gtfs_version.txt")
 
 # MONGO
-MONGO_PASSWORD = "1wxN24DvwXKy55yV"     # todo: change password then make it a secret probably
+MONGO_PASSWORD = os.getenv("MONGO_PASSWORD")
 MONGO_URI = f"mongodb+srv://fernandoagustin803_db_user:{MONGO_PASSWORD}@cluster0.kubarsp.mongodb.net/?appName=Cluster0"
 MONGO_DATABASE = "live"
 
