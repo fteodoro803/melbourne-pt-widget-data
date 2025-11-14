@@ -20,4 +20,4 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
       - name: Run test flags check
-        run: python test/flags.py
+        run: python -m test/flags.py
