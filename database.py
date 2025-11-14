@@ -13,11 +13,17 @@ from config import EXTRACTED_DIRECTORY, KEEP_OUTDATED_DATA, MONGO_URI, MONGO_DAT
 from utils import get_types_from_path, get_keep_file_basenames
 
 # Mongo
-client = MongoClient(
-    MONGO_URI,
-    server_api=ServerApi('1'),
-    tlsCAFile = certifi.where(),
-)
+client: MongoClient | None = None
+
+def connect_to_database() -> None:
+    global client       # uses database.py's client
+
+    if client is None:
+        client = MongoClient(
+            MONGO_URI,
+            server_api=ServerApi('1'),
+            tlsCAFile=certifi.where(),
+        )
 
 def is_db_connected() -> bool:
     try:
