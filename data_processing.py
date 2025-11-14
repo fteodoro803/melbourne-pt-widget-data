@@ -1,15 +1,54 @@
 from datetime import datetime
-
 from bs4 import BeautifulSoup
 import re
 import requests
 
 from gtfs import download_gtfs, clean_gtfs, date_format
-from database import build_database, update_data_version, get_data_version, close_database, delete_old_data
+from database import build_database, update_data_version, get_data_version, close_database, delete_old_data, \
+    is_db_connected
 from utils import reset, delete_file
 from config import GTFS_FILE, EXTRACTED_DIRECTORY, KEEP_TEMP_FILES, IGNORE_VERSION_CHECK, MOCK_OLD_DATE, OLD_DATE, \
     GTFS_URL, TRANSPORT_FILTER, KEEP_FILES
 from cloud import upload_string_to_cloud_storage
+
+
+def update_gtfs_data():
+    """
+    Main function to update GTFS data.
+    Downloads new data if available and builds database.
+
+    Returns:
+        tuple: True if data was updated, False if not, and Date of Data
+    """
+    # Check MongoDB if alive
+    if not is_db_connected():
+        raise Exception("MongoDB unreachable, could not update GTFS data")
+
+    # Fetch metadata
+    data_version, download_link, soup = fetch_gtfs_metadata()
+
+    # Check if update needed
+    if not check_if_update_needed(data_version):
+        return False
+
+    # Update last updated date
+    update_data_version(data_version)
+
+    # Parse transport types
+    transports_dict = parse_transport_types(soup, TRANSPORT_FILTER)
+
+    # Download and process gtfs schedule files
+    download_and_extract_gtfs(download_link, transports_dict)
+
+    # Build database
+    build_database(transports_dict)
+
+    # Cleanup
+    delete_old_data(data_version)
+    cleanup_temp_files()
+
+    return True
+
 
 def fetch_gtfs_metadata() -> tuple[datetime, str, BeautifulSoup]:
     """
@@ -130,57 +169,3 @@ def cleanup_temp_files() -> None:
 
     delete_file(GTFS_FILE)
     delete_file(EXTRACTED_DIRECTORY)
-
-
-def update_gtfs_data():
-    """
-    Main function to update GTFS data.
-    Downloads new data if available and builds database.
-
-    Returns:
-        tuple: True if data was updated, False if not, and Date of Data
-    """
-    # Fetch metadata
-    data_version, download_link, soup = fetch_gtfs_metadata()
-
-    # Check if update needed
-    if not check_if_update_needed(data_version):
-        return False
-
-    # Update last updated date
-    update_data_version(data_version)
-
-    # Parse transport types
-    transports_dict = parse_transport_types(soup, TRANSPORT_FILTER)
-
-    # Download and process gtfs schedule files
-    download_and_extract_gtfs(download_link, transports_dict)
-
-    # Build database
-    build_database(transports_dict)
-
-    # Cleanup
-    delete_old_data(data_version)
-    cleanup_temp_files()
-
-    return True
-
-
-def main():
-    """Entry point for local testing."""
-    RESET_FILES = False
-
-    try:
-        update_gtfs_data()
-        print("Done")
-    except Exception as e:
-        print(f"Error: {e}")
-        raise
-    finally:
-        # Test reset if needed
-        reset(RESET_FILES)
-        close_database()
-
-
-if __name__ == "__main__":
-    main()

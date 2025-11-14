@@ -2,5 +2,4 @@
 .idea/
 gtfs.zip
 extracted/
-gtfs_version.txt
-gtfs_database.sqlite
+.env

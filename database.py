@@ -19,6 +19,16 @@ client = MongoClient(
     tlsCAFile = certifi.where(),
 )
 
+def is_db_connected() -> bool:
+    try:
+        client.admin.command("ping")
+        print("Connected to MongoDB")
+        return True
+    except Exception as e:
+        print("Could not connect to MongoDB")
+        print(f"     Error: {e}")
+        return False
+
 def build_database(transports_dict: dict[str,str]) -> None:
     """
     Build MongoDB database from extracted GTFS files.
@@ -26,8 +36,6 @@ def build_database(transports_dict: dict[str,str]) -> None:
     Args:
         transports_dict: Dictionary of transport numbers and types
     """
-
-    print(f"CERTIFI TEST: {certifi.where()}")
 
     # Process all extracted txt files
     for root, dirs, files in os.walk(EXTRACTED_DIRECTORY.path):
