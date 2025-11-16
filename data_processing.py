@@ -20,6 +20,8 @@ def update_gtfs_data():
     Returns:
         tuple: True if data was updated, False if not, and Date of Data
     """
+    print("======= Starting GTFS Update Process =======")
+
     # Open MongoDB and check status
     if not is_db_connected():
         raise Exception("MongoDB unreachable, could not update GTFS data")

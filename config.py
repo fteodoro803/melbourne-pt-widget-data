@@ -30,6 +30,7 @@ EXTRACTED_DIRECTORY: MyFile = MyFile("extracted")
 MONGO_PASSWORD = os.getenv("MONGO_PASSWORD")
 MONGO_URI = f"mongodb+srv://fernandoagustin803_db_user:{MONGO_PASSWORD}@cluster0.kubarsp.mongodb.net/?appName=Cluster0"
 MONGO_DATABASE = "live"
+TEST_DATABASE = "test"
 
 # TEST FLAGS (should all be False in deployment)
 KEEP_TEMP_FILES = False
@@ -39,4 +40,4 @@ KEEP_OUTDATED_DATA = False  # in MongoDB Database
 USE_LIVE_MONGODB = False    # Switches to test database
 
 OLD_DATE = datetime(1990,1,1)
-MONGO_DATABASE = MONGO_DATABASE if (IS_CLOUD or USE_LIVE_MONGODB) else "test"
+MONGO_DATABASE = MONGO_DATABASE if (IS_CLOUD or USE_LIVE_MONGODB) else TEST_DATABASE
