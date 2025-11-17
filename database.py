@@ -9,7 +9,7 @@ from pymongo.database import Database
 from pymongo.server_api import ServerApi
 from pymongo.synchronous.collection import Collection
 
-from config import EXTRACTED_DIRECTORY, KEEP_OUTDATED_DATA, MONGO_URI, MONGO_DATABASE
+from config import EXTRACTED_DIRECTORY, KEEP_OUTDATED_DATA, MONGO_URI, MONGO_DATABASE, LOGS_DATABASE
 from utils import get_types_from_path, get_keep_file_basenames
 
 # Mongo
@@ -145,3 +145,42 @@ def add_gtfs_data(transports_dict: dict[str,str]) -> None:
 
             if data_file_path.endswith(".txt"):
                 add_to_database(data_file_path, transports_dict)
+
+def add_gtfs_site_log(gtfs_last_updated: datetime, site_last_updated: datetime, metadata_modified: datetime) -> None:
+    """
+    Adds or updates a GTFS site metadata log in the database for tracking updates.
+
+    This function logs the last updated timestamps from the GTFS schedule site and the API.
+    If a log entry with the same timestamps exists, it will be updated; otherwise, a new
+    entry will be inserted.
+
+    Args:
+        gtfs_last_updated (datetime): Date of last update as displayed on the GTFS schedule site.
+        site_last_updated (datetime): Date of last update retrieved from the API.
+        metadata_modified (datetime): Date when metadata was last modified, retrieved from the API.
+    """
+
+    try:
+        # 1. Connect to Database and Collection
+        db: Database = client[LOGS_DATABASE]
+        collection: Collection = db["site_metadata"]
+
+        # 2. Upsert data
+        collection.update_one(
+            {
+                "gtfs_last_updated": gtfs_last_updated,
+                "site_last_updated": site_last_updated,
+                "metadata_modified": metadata_modified
+            },
+            {
+                "$set": {
+                    "gtfs_last_updated": gtfs_last_updated,
+                    "site_last_updated": site_last_updated,
+                    "metadata_modified": metadata_modified,
+                }
+            },
+            upsert=True
+        )
+
+    except Exception as e:
+        print(e)

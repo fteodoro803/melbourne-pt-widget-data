@@ -2,10 +2,11 @@ from datetime import datetime
 from bs4 import BeautifulSoup
 import re
 import requests
+from requests import Response
 
 from gtfs import download_gtfs, clean_gtfs, date_format
 from database import add_gtfs_data, update_data_version, get_data_version, delete_old_data, \
-    is_db_connected
+    is_db_connected, add_gtfs_site_log
 from utils import delete_file
 from config import GTFS_FILE, EXTRACTED_DIRECTORY, KEEP_TEMP_FILES, IGNORE_VERSION_CHECK, MOCK_OLD_DATE, OLD_DATE, \
     GTFS_URL, TRANSPORT_FILTER, KEEP_FILES
@@ -27,14 +28,16 @@ def update_gtfs_data():
         raise Exception("MongoDB unreachable, could not update GTFS data")
 
     # Fetch metadata
-    data_version, download_link, soup = fetch_gtfs_metadata()
+    data_version, download_link, soup = fetch_gtfs_data()
 
     # Check if update needed
     if not check_if_update_needed(data_version):
         return False
 
-    # Update last updated date
+    # Update last updated date in the database (and site metadata in logs)
     update_data_version(data_version)
+    site_version, metadata_version = fetch_site_metadata()
+    add_gtfs_site_log(data_version, site_version, metadata_version)
 
     # Parse transport types
     transports_dict = parse_transport_types(soup, TRANSPORT_FILTER)
@@ -52,7 +55,7 @@ def update_gtfs_data():
     return True
 
 
-def fetch_gtfs_metadata() -> tuple[datetime, str, BeautifulSoup]:
+def fetch_gtfs_data() -> tuple[datetime, str, BeautifulSoup]:
     """
     Fetch the GTFS dataset page and extract metadata.
 
@@ -90,6 +93,31 @@ def fetch_gtfs_metadata() -> tuple[datetime, str, BeautifulSoup]:
     download_link = links[0] if links else ""
 
     return version_date, download_link, soup
+
+
+def fetch_site_metadata() -> tuple[datetime | None, datetime | None]:
+    """
+    Fetches the last update timestamps for the GTFS site metadata from the Transport Victoria API.
+
+    Returns:
+        tuple[datetime | None, datetime | None]: A tuple containing:
+            - last_updated_date: The date the site was last updated.
+            - metadata_modified: The date the metadata was last modified.
+            Returns None for either value if fetching or parsing fails.
+    """
+    url = "https://opendata.transport.vic.gov.au/api/3/action/package_show"
+    params = {"id": "gtfs-schedule"}
+
+    response: Response = requests.get(url, params=params)
+    data = response.json()
+    result = data['result']
+
+    # Convert the data to datetime
+    last_updated_date: datetime = datetime.fromisoformat(result['last_updated_date'])
+    metadata_modified: datetime = datetime.fromisoformat(result['metadata_modified'])
+    print(f"Site last updated: {last_updated_date} | Metadata last updated: {metadata_modified}")
+
+    return last_updated_date, metadata_modified
 
 
 def parse_transport_types(soup: BeautifulSoup, transport_filter: str) -> dict[str, str]:
