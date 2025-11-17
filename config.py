@@ -31,6 +31,7 @@ MONGO_PASSWORD = os.getenv("MONGO_PASSWORD")
 MONGO_URI = f"mongodb+srv://fernandoagustin803_db_user:{MONGO_PASSWORD}@cluster0.kubarsp.mongodb.net/?appName=Cluster0"
 MONGO_DATABASE = "live"
 TEST_DATABASE = "test"
+LOGS_DATABASE = "logs"
 
 # TEST FLAGS (should all be False in deployment)
 KEEP_TEMP_FILES = False
