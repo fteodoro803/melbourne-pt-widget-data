@@ -1,3 +1,4 @@
+import os
 from datetime import datetime
 from bs4 import BeautifulSoup
 import re
@@ -5,11 +6,11 @@ import requests
 from requests import Response
 
 from gtfs import download_gtfs, clean_gtfs, date_format
-from database import add_gtfs_data, update_data_version, get_data_version, delete_old_data, \
-    is_db_connected, add_gtfs_site_log
+from database import update_data_version, get_data_version, delete_old_data, \
+    is_db_connected, add_gtfs_site_log, add_to_database
 from utils import delete_file
 from config import GTFS_FILE, EXTRACTED_DIRECTORY, KEEP_TEMP_FILES, IGNORE_VERSION_CHECK, MOCK_OLD_DATE, OLD_DATE, \
-    GTFS_URL, TRANSPORT_FILTER, KEEP_FILES
+    GTFS_URL, TRANSPORT_FILTER, KEEP_FILES, MyFile
 from cloud import upload_string_to_cloud_storage
 
 
@@ -46,11 +47,10 @@ def update_gtfs_data():
     download_and_extract_gtfs(download_link, transports_dict)
 
     # Build database
-    add_gtfs_data(transports_dict)
+    build_database(transports_dict)
 
     # Cleanup
     delete_old_data(data_version)
-    cleanup_temp_files()
 
     return True
 
@@ -190,12 +190,25 @@ def download_and_extract_gtfs(download_link: str, transports_dict: dict[str,str]
     keep_folders = list(transports_dict.keys())
     clean_gtfs(GTFS_FILE, EXTRACTED_DIRECTORY, keep_folders, KEEP_FILES)
 
-
-def cleanup_temp_files() -> None:
-    """Remove temporary files to save space."""
-    if KEEP_TEMP_FILES:
-        print("[TEST] Skipping cleanup of temporary files")
-        return
-
+    # Delete gtfs zip file
     delete_file(GTFS_FILE)
+
+
+def build_database(transports_dict: dict[str,str]) -> None:
+    """
+    Build database from extracted GTFS files.
+
+    Args:
+        transports_dict: Dictionary of transport numbers and types
+    """
+
+    # Process all extracted txt files, and delete them afterwards
+    for root, dirs, files in os.walk(EXTRACTED_DIRECTORY.path):
+        for filename in files:
+            data_file_path = MyFile(os.path.join(root, filename))
+
+            if data_file_path.name.endswith(".txt"):
+                add_to_database(data_file_path, transports_dict)
+                delete_file(data_file_path)
+
     delete_file(EXTRACTED_DIRECTORY)
