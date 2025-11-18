@@ -44,6 +44,7 @@ def clean_gtfs(gtfs_zip: MyFile, output_folder: MyFile, keep_folders: [str], kee
     with zipfile.ZipFile(gtfs_zip.path, 'r') as gtfsRead:
 
         # 2. Iterate over all files in the zip
+        print("Saving files...")
         for transport in gtfsRead.namelist():
             transport_number = transport.split('/')[0]      # first part of the path, e.g. '2'
 
@@ -69,4 +70,4 @@ def clean_gtfs(gtfs_zip: MyFile, output_folder: MyFile, keep_folders: [str], kee
                             with open(out_path, 'wb') as f:
                                 f.write(data)
 
-                            print(f"Saved {file} from {transport} to {out_path}")
+                            print(f"        {file} from {transport} to {out_path}")

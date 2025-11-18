@@ -2,13 +2,17 @@ import os
 import shutil
 import re
 
-from config import GTFS_FILE, EXTRACTED_DIRECTORY, MyFile, KEEP_FILES
+from config import GTFS_FILE, EXTRACTED_DIRECTORY, MyFile, KEEP_FILES, KEEP_TEMP_FILES
 from pathlib import Path
 
 def delete_file(file: MyFile) -> None:
     """
     Delete a file or directory (recursively if directory).
     """
+    if KEEP_TEMP_FILES:
+        print(f"[TEST] Skipping deletion of temporary file {file}")
+        return
+
     path = file.path
 
     if os.path.isdir(path):

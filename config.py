@@ -36,7 +36,7 @@ LOGS_DATABASE = "logs"
 # TEST FLAGS (should all be False in deployment)
 KEEP_TEMP_FILES = False
 IGNORE_VERSION_CHECK = False
-MOCK_OLD_DATE = False    # pretends all date is from 1 January 1990
+MOCK_OLD_DATE = False    # pretends old date is from 1 January 1990
 KEEP_OUTDATED_DATA = False  # in MongoDB Database
 USE_LIVE_MONGODB = False    # Switches to test database
 
