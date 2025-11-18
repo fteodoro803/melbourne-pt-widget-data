@@ -9,8 +9,8 @@ from pymongo.database import Database
 from pymongo.server_api import ServerApi
 from pymongo.synchronous.collection import Collection
 
-from config import EXTRACTED_DIRECTORY, KEEP_OUTDATED_DATA, MONGO_URI, MONGO_DATABASE, LOGS_DATABASE
-from utils import get_types_from_path, get_keep_file_basenames
+from config import EXTRACTED_DIRECTORY, KEEP_OUTDATED_DATA, MONGO_URI, MONGO_DATABASE, LOGS_DATABASE, MyFile
+from utils import get_types_from_path, get_keep_file_basenames, delete_file
 
 # Mongo
 client: MongoClient = MongoClient(
@@ -29,16 +29,17 @@ def is_db_connected() -> bool:
         print(f"     Error: {e}")
         return False
 
-def add_to_database(file_path: str, transports: dict[str, str]) -> None:
+
+def add_to_database(file: MyFile, transports: dict[str, str]) -> None:
     try:
         # 1. Select database
         db: Database= client[MONGO_DATABASE]
 
         # 2. Load file
-        df = pd.read_csv(file_path)
+        df = pd.read_csv(file.path)
 
         # 3. Determine file and transport types to access target collection
-        file_type, transport_type = get_types_from_path(file_path, transports)
+        file_type, transport_type = get_types_from_path(file.path, transports)
         collection: Collection= db[f"{transport_type}_{file_type}"]
 
         # 4. Dataframe modifications
@@ -130,21 +131,6 @@ def delete_old_data(version: datetime) -> None:
     except Exception as e:
         print(e)
 
-def add_gtfs_data(transports_dict: dict[str,str]) -> None:
-    """
-    Build MongoDB database from extracted GTFS files.
-
-    Args:
-        transports_dict: Dictionary of transport numbers and types
-    """
-
-    # Process all extracted txt files
-    for root, dirs, files in os.walk(EXTRACTED_DIRECTORY.path):
-        for filename in files:
-            data_file_path = os.path.join(root, filename)
-
-            if data_file_path.endswith(".txt"):
-                add_to_database(data_file_path, transports_dict)
 
 def add_gtfs_site_log(gtfs_last_updated: datetime, site_last_updated: datetime, metadata_modified: datetime) -> None:
     """

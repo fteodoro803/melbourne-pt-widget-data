@@ -24,15 +24,6 @@ def delete_file(file: MyFile) -> None:
     else:
         print(f"'{path}' does not exist")
 
-def reset(enabled: bool) -> None:
-    if not enabled:
-        return
-
-    print(f"Resetting Files")
-    print(f"Deleting {EXTRACTED_DIRECTORY.name, GTFS_FILE.name}, ...")
-    delete_file(EXTRACTED_DIRECTORY)
-    delete_file(GTFS_FILE)
-    print("Reset finished")
 
 def get_types_from_path(file_path: str, transports: dict[str, str]) -> tuple[str, str]:
     """
@@ -67,6 +58,7 @@ def get_types_from_path(file_path: str, transports: dict[str, str]) -> tuple[str
     transport_str = transport_str.replace(' ', '_').lower()
 
     return file_type, transport_str
+
 
 def get_keep_file_basenames() -> list[str]:
     """
