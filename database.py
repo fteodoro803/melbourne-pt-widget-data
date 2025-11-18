@@ -1,4 +1,3 @@
-import os
 import certifi
 import pandas as pd
 import numpy as np
@@ -9,8 +8,8 @@ from pymongo.database import Database
 from pymongo.server_api import ServerApi
 from pymongo.synchronous.collection import Collection
 
-from config import EXTRACTED_DIRECTORY, KEEP_OUTDATED_DATA, MONGO_URI, MONGO_DATABASE, LOGS_DATABASE, MyFile
-from utils import get_types_from_path, get_keep_file_basenames, delete_file
+from config import KEEP_OUTDATED_DATA, MONGO_URI, MONGO_DATABASE, LOGS_DATABASE, MyFile
+from utils import get_types_from_path, get_keep_file_basenames
 
 # Mongo
 client: MongoClient = MongoClient(

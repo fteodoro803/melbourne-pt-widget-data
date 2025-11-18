@@ -2,7 +2,7 @@ import os
 import shutil
 import re
 
-from config import GTFS_FILE, EXTRACTED_DIRECTORY, MyFile, KEEP_FILES, KEEP_TEMP_FILES
+from config import MyFile, KEEP_FILES, KEEP_TEMP_FILES
 from pathlib import Path
 
 def delete_file(file: MyFile) -> None:

@@ -9,7 +9,7 @@ from gtfs import download_gtfs, clean_gtfs, date_format
 from database import update_data_version, get_data_version, delete_old_data, \
     is_db_connected, add_gtfs_site_log, add_to_database
 from utils import delete_file
-from config import GTFS_FILE, EXTRACTED_DIRECTORY, KEEP_TEMP_FILES, IGNORE_VERSION_CHECK, MOCK_OLD_DATE, OLD_DATE, \
+from config import GTFS_FILE, EXTRACTED_DIRECTORY, IGNORE_VERSION_CHECK, MOCK_OLD_DATE, OLD_DATE, \
     GTFS_URL, TRANSPORT_FILTER, KEEP_FILES, MyFile
 from cloud import upload_string_to_cloud_storage
 
