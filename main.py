@@ -30,7 +30,7 @@ def update():
         return f"Error: {str(e)}\n", 500
 
 
-@app.route("/health", methods=["POST"])
+@app.route("/health", methods=["GET"])
 def health():
     """Health check."""
     return jsonify("Health check succeeded"), 200
