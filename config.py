@@ -39,6 +39,7 @@ IGNORE_VERSION_CHECK = False
 MOCK_OLD_DATE = False    # pretends old date is from 1 January 1990
 KEEP_OUTDATED_DATA = False  # in MongoDB Database
 USE_LIVE_MONGODB = False    # Switches to test database
+MOCK_MONGODB_UNAVAILABLE = False
 
 OLD_DATE = datetime(1990,1,1)
 MONGO_DATABASE = MONGO_DATABASE if (IS_CLOUD or USE_LIVE_MONGODB) else TEST_DATABASE

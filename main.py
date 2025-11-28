@@ -1,7 +1,9 @@
 from datetime import datetime
 from data_processing import update_gtfs_data
 from cloud import upload_file_to_cloud_storage
-from flask import Flask, jsonify
+from flask import Flask, jsonify, request
+
+from database import get_data_version, get_routes, is_db_connected, get_shapes, get_trips
 
 # Flask instance
 app = Flask(__name__)
@@ -20,10 +22,13 @@ def update():
             total_time = (datetime.now() - start).seconds
             return jsonify({
                 "message": f"Finished updating data, took {total_time} seconds",
-                "updated": True
+                "updated": True,
             }), 200
         else:
-            return 'No update needed\n', 200
+            return jsonify({
+                "message": "No update needed",
+                "updated": False,
+            }), 200
 
     except Exception as e:
         print(f"Error: {e}")
@@ -33,9 +38,47 @@ def update():
 @app.route("/health", methods=["GET"])
 def health():
     """Health check."""
-    return jsonify("Health check succeeded"), 200
+    db_connected: bool = is_db_connected()
 
+    if not db_connected:
+        return jsonify({
+            "status": "unhealthy",
+            "reason": "MongoDB connection not working",
+        }), 503
 
-# For local testing
+    return jsonify({
+        "status": "ok"
+    }), 200
+
+@app.route("/version", methods=["GET"])
+def version():
+    """Gets the current version date of saved GTFS Schedule data."""
+    data_version: datetime = get_data_version()
+
+    return jsonify({
+        "version": data_version
+    }), 200
+
+@app.route("/routes", methods=["GET"])
+def routes():
+    """Gets all tram routes offered by PTV in GTFS format."""
+    gtfs_routes = get_routes()
+    return jsonify(gtfs_routes), 200
+
+@app.route("/shapes", methods=["GET"])
+def shapes():
+    """Gets all shapes/geo-paths for a specified shape_id."""
+    shape_id = request.args.get("id")
+    gtfs_shapes = get_shapes(shape_id)
+    return jsonify(gtfs_shapes), 200
+
+@app.route("/trips", methods=["GET"])
+def trips():
+    """Gets all trips for a specified route_id."""
+    route_id = request.args.get("id")
+    gtfs_trips = get_trips(route_id)
+    return jsonify(gtfs_trips), 200
+
+# For local testing Flask app
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=8080)
