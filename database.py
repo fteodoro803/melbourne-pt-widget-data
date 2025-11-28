@@ -32,7 +32,6 @@ def is_db_connected() -> bool:
         print(f"     Error: {e}")
         return False
 
-
 def add_to_database(file: MyFile, transports: dict[str, str]) -> None:
     try:
         # 1. Select database
@@ -82,8 +81,8 @@ def update_data_version(version: datetime) -> None:
 
 def get_data_version() -> datetime:
     try:
-        db: Database= client[MONGO_DATABASE]
-        collection: Collection= db.misc
+        db: Database = client[MONGO_DATABASE]
+        collection: Collection = db.misc
 
         document = collection.find_one({"_id": "gtfs_version"})
         if document and "version" in document:
@@ -134,7 +133,6 @@ def delete_old_data(version: datetime) -> None:
     except Exception as e:
         print(e)
 
-
 def add_gtfs_site_log(gtfs_last_updated: datetime, site_last_updated: datetime, metadata_modified: datetime) -> None:
     """
     Adds or updates a GTFS site metadata log in the database for tracking updates.
@@ -171,5 +169,38 @@ def add_gtfs_site_log(gtfs_last_updated: datetime, site_last_updated: datetime, 
             upsert=True
         )
 
+    except Exception as e:
+        print(e)
+
+def get_routes():
+    try:
+        db: Database = client[MONGO_DATABASE]
+        collection: Collection = db["metropolitan_tram_routes"]
+
+        # Get list of all documents, excluding "_id" and "version" field
+        documents = list(collection.find({}, {"_id": 0, "version": 0}))
+        return documents
+    except Exception as e:
+        print(e)
+
+def get_shapes(shape_id: str):
+    try:
+        db: Database = client[MONGO_DATABASE]
+        collection: Collection = db["metropolitan_tram_shapes"]
+
+        # Get list of all documents, excluding "_id" and "version" field
+        documents = list(collection.find({"shape_id": shape_id}, {"_id": 0, "version": 0}))
+        return documents
+    except Exception as e:
+        print(e)
+
+def get_trips(route_id: str):
+    try:
+        db: Database = client[MONGO_DATABASE]
+        collection: Collection = db["metropolitan_tram_trips"]
+
+        # Get list of all documents, excluding "_id" and "version" field
+        documents = list(collection.find({"route_id": route_id}, {"_id": 0, "version": 0}))
+        return documents
     except Exception as e:
         print(e)
