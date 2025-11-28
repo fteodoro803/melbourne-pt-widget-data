@@ -8,7 +8,7 @@ from pymongo.database import Database
 from pymongo.server_api import ServerApi
 from pymongo.synchronous.collection import Collection
 
-from config import KEEP_OUTDATED_DATA, MONGO_URI, MONGO_DATABASE, LOGS_DATABASE, MyFile
+from config import KEEP_OUTDATED_DATA, MONGO_URI, MONGO_DATABASE, LOGS_DATABASE, MyFile, MOCK_MONGODB_UNAVAILABLE
 from utils import get_types_from_path, get_keep_file_basenames
 
 # Mongo
@@ -19,6 +19,10 @@ client: MongoClient = MongoClient(
         )
 
 def is_db_connected() -> bool:
+    if MOCK_MONGODB_UNAVAILABLE:
+        print("[TEST] Mocking MongoDB unavailable")
+        return False
+
     try:
         client.admin.command("ping")
         print("Connected to MongoDB")
