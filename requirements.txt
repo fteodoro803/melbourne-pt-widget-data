@@ -10,7 +10,6 @@ colorama==0.4.6
 deprecation==2.1.0
 dnspython==2.8.0
 Flask==3.1.2
-functions-framework==3.10.0
 google-api-core==2.28.0
 google-auth==2.41.1
 google-cloud-core==2.4.3
