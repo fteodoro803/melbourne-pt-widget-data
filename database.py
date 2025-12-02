@@ -194,6 +194,21 @@ def get_shapes(shape_id: str):
     except Exception as e:
         print(e)
 
+# Returns the distinct shapes for a specific route
+def get_route_shapes(route_id: str) -> list[str]:
+    try:
+        db: Database = client[MONGO_DATABASE]
+        collection: Collection = db["metropolitan_tram_trips"]
+
+        shapes: list[str] = collection.distinct(
+            "shape_id",
+            {"route_id": route_id}
+        )
+
+        return shapes
+    except Exception as e:
+        print(e)
+
 def get_trips(route_id: str):
     try:
         db: Database = client[MONGO_DATABASE]
