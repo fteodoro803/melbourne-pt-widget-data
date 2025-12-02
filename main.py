@@ -3,7 +3,7 @@ from data_processing import update_gtfs_data
 from cloud import upload_file_to_cloud_storage
 from flask import Flask, jsonify, request
 
-from database import get_data_version, get_routes, is_db_connected, get_shapes, get_trips
+from database import get_data_version, get_routes, is_db_connected, get_shapes, get_trips, get_route_shapes
 
 # Flask instance
 app = Flask(__name__)
@@ -71,6 +71,20 @@ def shapes():
     shape_id = request.args.get("id")
     gtfs_shapes = get_shapes(shape_id)
     return jsonify(gtfs_shapes), 200
+
+@app.route("/routeShapes", methods=["GET"])
+def routeShapes():
+    """Gets all shapes for a specified route_id."""
+    route_id = request.args.get("id")
+    shape_ids = get_route_shapes(route_id)
+
+    # Accumulate all shapes data for each shape id
+    gtfs_shapes = []
+    for shape in shape_ids:
+        shape_data = get_shapes(shape)
+        gtfs_shapes.extend(shape_data)
+
+    return jsonify(gtfs_shapes)
 
 @app.route("/trips", methods=["GET"])
 def trips():
