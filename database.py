@@ -47,6 +47,8 @@ def add_to_database(file: MyFile, transports: dict[str, str]) -> None:
         # 4. Dataframe modifications
         df = df.replace({np.nan: None})         # remove NaN
         df['version'] = get_data_version()      # add version to fields
+        if "route_short_name" in df.columns:    # convert route_short_name to string
+            df['route_short_name'] = df["route_short_name"].astype(str)
 
         # 5. Save file dataframe to database
         records = df.to_dict('records')
@@ -191,6 +193,21 @@ def get_shapes(shape_id: str):
         # Get list of all documents, excluding "_id" and "version" field
         documents = list(collection.find({"shape_id": shape_id}, {"_id": 0, "version": 0}))
         return documents
+    except Exception as e:
+        print(e)
+
+# Returns the distinct shapes for a specific route
+def get_route_shapes(route_id: str) -> list[str]:
+    try:
+        db: Database = client[MONGO_DATABASE]
+        collection: Collection = db["metropolitan_tram_trips"]
+
+        shapes: list[str] = collection.distinct(
+            "shape_id",
+            {"route_id": route_id}
+        )
+
+        return shapes
     except Exception as e:
         print(e)
 
