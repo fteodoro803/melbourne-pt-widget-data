@@ -47,6 +47,8 @@ def add_to_database(file: MyFile, transports: dict[str, str]) -> None:
         # 4. Dataframe modifications
         df = df.replace({np.nan: None})         # remove NaN
         df['version'] = get_data_version()      # add version to fields
+        if "route_short_name" in df.columns:    # convert route_short_name to string
+            df['route_short_name'] = df["route_short_name"].astype(str)
 
         # 5. Save file dataframe to database
         records = df.to_dict('records')
