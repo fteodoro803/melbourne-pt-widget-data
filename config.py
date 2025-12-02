@@ -18,7 +18,8 @@ TRANSPORT_FILTER = "Tram"  # Can be "Metropolitan", "Tram", etc.
 KEEP_FILES = ["routes.txt", "trips.txt", "shapes.txt"]
 
 # CLOUD
-IS_CLOUD = os.getenv('FUNCTION_TARGET') is not None     # Detects if running on Google Cloud or Locally
+# IS_CLOUD = os.getenv('FUNCTION_TARGET') is not None     # Detects if running on Google Cloud or Locally   // doesnt seem to work anymore
+IS_CLOUD = os.getenv('IS_CLOUD') is not None     # Detects if running on Google Cloud or Locally
 TEMP_DIR = "/tmp" if IS_CLOUD else "."
 BUCKET_NAME = "ptv-widget-gtfs-schedule"
 
