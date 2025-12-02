@@ -74,7 +74,7 @@ def update_data_version(version: datetime) -> None:
         # 2. Upsert data
         collection.update_one(
             {"_id": "gtfs_version"},            # match any document (or none)
-            {"$set": {"version": version}},     # update this field
+            {"$set": {"version": version.isoformat()}},     # update this field
             upsert=True                         # insert if no document exists
         )
 
