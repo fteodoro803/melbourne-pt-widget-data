@@ -10,7 +10,7 @@ from database import update_data_version, get_data_version, delete_old_data, \
     is_db_connected, add_gtfs_site_log, add_to_database
 from utils import delete_file
 from config import GTFS_FILE, EXTRACTED_DIRECTORY, IGNORE_VERSION_CHECK, MOCK_OLD_DATE, OLD_DATE, \
-    GTFS_URL, TRANSPORT_FILTER, KEEP_FILES, MyFile
+    GTFS_URL, MyFile, TRANSPORTS
 from cloud import upload_string_to_cloud_storage
 
 
@@ -41,7 +41,7 @@ def update_gtfs_data():
     add_gtfs_site_log(data_version, site_version, metadata_version)
 
     # Parse transport types
-    transports_dict = parse_transport_types(soup, TRANSPORT_FILTER)
+    transports_dict = parse_transport_types(soup, list(TRANSPORTS.keys()))
 
     # Download and process gtfs schedule files
     download_and_extract_gtfs(download_link, transports_dict)
@@ -120,7 +120,7 @@ def fetch_site_metadata() -> tuple[datetime | None, datetime | None]:
     return last_updated_date, metadata_modified
 
 
-def parse_transport_types(soup: BeautifulSoup, transport_filter: str) -> dict[str, str]:
+def parse_transport_types(soup: BeautifulSoup, transport_filter: list[str]) -> dict[str, str]:
     """
     Parse transport types and their numbers from the HTML.
 
@@ -132,17 +132,23 @@ def parse_transport_types(soup: BeautifulSoup, transport_filter: str) -> dict[st
         dict: {transport_number: transport_type}
     """
     transports_dict = {}
-    pattern = r"(\d+)\s*\(([^)]+)\)"
-    number_filter = soup.find_all("p")
+    # pattern = r"(\d+)\s*\(([^)]+)\)"      # this pattern used to work for example: "4 (Metropolitan Bus)"
+    pattern = r"(\d+)\s*(?:\(([^)]+)\)|(.+))"   # But now they changed bus to a different format: "4 Myki Bus (Metro Bus and Regional Town Bus)"
+    p_filter = soup.find_all("p")
 
-    for item in number_filter:
-        if transport_filter in item.getText():
+    for item in p_filter:
+        if any(search in item.getText() for search in transport_filter):
             transport = item.getText()
-            match = re.findall(pattern, transport)
+            match = re.search(pattern, transport)
 
             if match:
-                transport_number = match[0][0]
-                transport_type = match[0][1]
+                transport_number = match.group(1)
+                transport_type = match.group(2) or match.group(3)
+
+                # Hardcoded case for Bus
+                if "metro bus" in transport_type.lower():
+                    transport_type = "Metro Bus"
+
                 transports_dict[transport_number] = transport_type
 
     print(f"Transports dictionary: {transports_dict}")
@@ -187,8 +193,7 @@ def download_and_extract_gtfs(download_link: str, transports_dict: dict[str,str]
     download_gtfs(download_link, GTFS_FILE)
 
     # Extract
-    keep_folders = list(transports_dict.keys())
-    clean_gtfs(GTFS_FILE, EXTRACTED_DIRECTORY, keep_folders, KEEP_FILES)
+    clean_gtfs(GTFS_FILE, EXTRACTED_DIRECTORY, transports_dict)
 
     # Delete gtfs zip file
     delete_file(GTFS_FILE)
