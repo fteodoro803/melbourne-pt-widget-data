@@ -174,13 +174,26 @@ def add_gtfs_site_log(gtfs_last_updated: datetime, site_last_updated: datetime, 
     except Exception as e:
         print(e)
 
-def get_routes():
+def get_routes(route_type: str|None):
     try:
         db: Database = client[MONGO_DATABASE]
-        collection: Collection = db["metropolitan_tram_routes"]
+        collection_names: list[str] = db.list_collection_names()
 
-        # Get list of all documents, excluding "_id" and "version" field
-        documents = list(collection.find({}, {"_id": 0, "version": 0}))
+        # Filters collections in database by presence of "route" in the name, and route type, if it exists
+        filtered_names: list[str] = []
+        if route_type:
+            filtered_names = [name for name in collection_names if "routes" in name and route_type in name]
+        else:
+            filtered_names = [name for name in collection_names if "routes" in name]
+
+        collections: list[Collection] = [db[collection] for collection in filtered_names]
+
+        # Go through all collections
+        documents = []
+        for collection in collections:
+            # Get list of all documents, excluding "_id" and "version" field
+            documents.extend(list(collection.find({}, {"_id": 0, "version": 0})))
+
         return documents
     except Exception as e:
         print(e)
