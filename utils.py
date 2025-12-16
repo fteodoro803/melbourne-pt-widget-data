@@ -2,7 +2,7 @@ import os
 import shutil
 import re
 
-from config import MyFile, KEEP_FILES, KEEP_TEMP_FILES
+from config import MyFile, KEEP_TEMP_FILES, TRANSPORTS
 from pathlib import Path
 
 def delete_file(file: MyFile) -> None:
@@ -67,4 +67,12 @@ def get_keep_file_basenames() -> list[str]:
     Example:
         ['stops.txt', 'routes.txt'] → ['stops', 'routes']
     """
-    return [Path(file).stem for file in KEEP_FILES]
+    files = []
+
+    for file in TRANSPORTS.values():
+        if file in files:
+            break
+        else:
+            files.extend(file)
+
+    return [Path(file).stem for file in files]

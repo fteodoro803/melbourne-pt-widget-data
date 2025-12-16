@@ -14,8 +14,12 @@ load_dotenv()
 
 # DATA PROCESSING
 GTFS_URL = "https://opendata.transport.vic.gov.au/dataset/gtfs-schedule"
-TRANSPORT_FILTER = "Tram"  # Can be "Metropolitan", "Tram", etc.
-KEEP_FILES = ["routes.txt", "trips.txt", "shapes.txt"]
+TRANSPORTS: dict[str, list[str]] = {
+    "Metropolitan Tram": ["routes.txt", "trips.txt", "shapes.txt"],
+    "Metropolitan Train": ["routes.txt"],
+    "Metro Bus": ["routes.txt"]
+}
+
 
 # CLOUD
 # IS_CLOUD = os.getenv('FUNCTION_TARGET') is not None     # Detects if running on Google Cloud or Locally   // doesnt seem to work anymore
@@ -36,8 +40,9 @@ LOGS_DATABASE = "logs"
 
 # TEST FLAGS (should all be False in deployment)
 KEEP_TEMP_FILES = False
+SKIP_DOWNLOAD = False       # Assumes you kept temporary files (gtfs.zip)
 IGNORE_VERSION_CHECK = False
-MOCK_OLD_DATE = False    # pretends old date is from 1 January 1990
+MOCK_OLD_DATE = False       # pretends old date is from 1 January 1990
 KEEP_OUTDATED_DATA = False  # in MongoDB Database
 USE_LIVE_MONGODB = False    # Switches to test database
 MOCK_MONGODB_UNAVAILABLE = False

@@ -4,7 +4,7 @@ import zipfile
 import requests
 import io
 
-from config import MyFile
+from config import MyFile, SKIP_DOWNLOAD, TRANSPORTS
 
 date_format = "%d %B %Y"  # matches "19 September 2025"
 
@@ -17,6 +17,10 @@ def download_gtfs(download_link: str, file: MyFile) -> None:
         file (MyFile): Name to save the downloaded file as.
     """
 
+    if SKIP_DOWNLOAD:
+        print("[TEST] Skipping download")
+        return
+
     # Stream download in chunks to avoid loading the whole file into memory
     with requests.get(download_link, stream=True) as r:
         r.raise_for_status()  # Raise an error if the request failed
@@ -26,17 +30,15 @@ def download_gtfs(download_link: str, file: MyFile) -> None:
 
     print(f"Downloaded {file}")
 
-def clean_gtfs(gtfs_zip: MyFile, output_folder: MyFile, keep_folders: [str], keep_files: [str]) -> None:
+def clean_gtfs(gtfs_zip: MyFile, output_folder: MyFile, transport_dict: dict[str,str]) -> None:
     """
     Extract selected files from inner ZIPs inside a GTFS outer ZIP.
 
     Parameters:
         gtfs_zip (MyFile): Path to the outer GTFS ZIP file.
         output_folder (MyFile): Base folder where extracted files will go.
-        keep_folders (list[str]): Only process these transport numbers (e.g. ['2','3']).
-        keep_files (list[str]): Only extract these filenames from each inner ZIP (e.g. ['routes.txt','stops.txt']).
+        transport_dict (dict[str,str]): Only process these modes of transportation.
     """
-
     # Ensures output folder exists
     os.makedirs(output_folder.path, exist_ok=True)
 
@@ -49,7 +51,8 @@ def clean_gtfs(gtfs_zip: MyFile, output_folder: MyFile, keep_folders: [str], kee
             transport_number = transport.split('/')[0]      # first part of the path, e.g. '2'
 
             # Only process if in keep_folders and is a .zip file
-            if transport_number in keep_folders and transport.endswith(".zip"):
+            if transport_number in transport_dict and transport.endswith(".zip"):
+                transport_name = transport_dict[transport_number]
 
                 # 3. Create subfolder for the transport number
                 subfolder = os.path.join(output_folder.path, transport_number)
@@ -62,7 +65,7 @@ def clean_gtfs(gtfs_zip: MyFile, output_folder: MyFile, keep_folders: [str], kee
                     for file in transitRead.namelist():
 
                         # 5. Save the files specified in keep_files
-                        if file in keep_files:
+                        if file in TRANSPORTS[transport_name]:
                             data = transitRead.read(file)
                             out_path = os.path.join(subfolder, file)
 
