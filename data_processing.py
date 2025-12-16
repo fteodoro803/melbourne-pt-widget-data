@@ -169,7 +169,7 @@ def check_if_update_needed(new_date: datetime) -> bool:
         print("[TEST] Skipping version check")
         return True
 
-    previous_date = get_data_version()
+    previous_date: datetime = get_data_version()
     print(f"Old data version: {previous_date}")
     print(f"New data version: {new_date}")
 

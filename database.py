@@ -88,7 +88,7 @@ def get_data_version() -> datetime:
 
         document = collection.find_one({"_id": "gtfs_version"})
         if document and "version" in document:
-            version: datetime = document["version"]
+            version: datetime = datetime.fromisoformat(document["version"])
             return version
 
     except Exception as e:
