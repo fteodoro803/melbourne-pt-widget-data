@@ -177,10 +177,16 @@ def add_gtfs_site_log(gtfs_last_updated: datetime, site_last_updated: datetime, 
 def get_routes():
     try:
         db: Database = client[MONGO_DATABASE]
-        collection: Collection = db["metropolitan_tram_routes"]
+        collections: list[Collection] = [db[collection] for collection in db.list_collection_names() if "routes" in collection]
 
-        # Get list of all documents, excluding "_id" and "version" field
-        documents = list(collection.find({}, {"_id": 0, "version": 0}))
+        # Go through all collections
+        documents = []
+
+        for collection in collections:
+            print(f"Collection: {collection}")
+            # Get list of all documents, excluding "_id" and "version" field
+            documents.extend(list(collection.find({}, {"_id": 0, "version": 0})))
+
         return documents
     except Exception as e:
         print(e)
