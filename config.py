@@ -17,7 +17,7 @@ GTFS_URL = "https://opendata.transport.vic.gov.au/dataset/gtfs-schedule"
 TRANSPORTS: dict[str, list[str]] = {
     "Metropolitan Tram": ["routes.txt", "trips.txt", "shapes.txt"],
     "Metropolitan Train": ["routes.txt"],
-    "Metro Bus": ["routes.txt"]
+    # "Metro Bus": ["routes.txt"]
 }
 
 
