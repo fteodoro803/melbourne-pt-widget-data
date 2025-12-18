@@ -1,9 +1,9 @@
-from datetime import datetime
+from database import get_data_version, get_routes, is_db_connected, get_shapes, get_trips, get_route_shapes
 from data_processing import update_gtfs_data
+from datetime import datetime
 from cloud import upload_file_to_cloud_storage
 from flask import Flask, jsonify, request
 
-from database import get_data_version, get_routes, is_db_connected, get_shapes, get_trips, get_route_shapes
 
 # Flask instance
 app = Flask(__name__)
@@ -62,7 +62,20 @@ def version():
 @app.route("/routes", methods=["GET"])
 def routes():
     """Gets all tram routes offered by PTV in GTFS format."""
-    gtfs_routes = get_routes()
+    route_type: str|None = request.args.get("type")
+
+    if route_type:
+        route_type = route_type.lower()     # normalisation
+        allowed_route_types = ["tram", "train", "bus"]
+
+        # Checks if inputted route type contains a word of the transport options
+        if not route_type in allowed_route_types:
+            return jsonify({
+                "status": "bad request",
+                "reason": f"{route_type} is not a valid type. Valid types are: {', '.join(allowed_route_types)}."
+            }), 400
+
+    gtfs_routes = get_routes(route_type)
     return jsonify(gtfs_routes), 200
 
 @app.route("/shapes", methods=["GET"])
