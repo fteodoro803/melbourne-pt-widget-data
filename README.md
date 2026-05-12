@@ -1,5 +1,5 @@
 # melbourne-pt-widget-data 
-Scripts used to handle gtfs data for Melbourne PT Widget
+Scripts used to automate handling gtfs data for Melbourne PT Widget
 
 For local development:
 1. Install requirements (ideally within a virtual environment)
